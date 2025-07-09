@@ -1,0 +1,172 @@
+2025-07-09 22:55:47,095 - __main__ - INFO - SESSION_START [e752d8fa] - IP: 136.226.98.48, Method: GET, Path: /, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 22:55:47,096 - __main__ - INFO - SESSION_END [e752d8fa] - Status: 200, Time: 0.001s, Size: 17339bytes
+2025-07-09 22:56:16,839 - __main__ - INFO - SESSION_START [438ec75f] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 22:56:16,842 - __main__ - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: delaunay
+2025-07-09 22:56:16,842 - __main__ - INFO - MESH_GENERATION - Calling Rust binary with 4 points
+2025-07-09 22:56:16,847 - __main__ - INFO - RUST_OUTPUT - 2025-07-09 22:56:16.843 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 22:56:16,847 - __main__ - INFO - RUST_OUTPUT - 2025-07-09 22:56:16.843 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 22:56:16,848 - __main__ - INFO - RUST_OUTPUT - 2025-07-09 22:56:16.843 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 22:56:16,848 - __main__ - INFO - RUST_OUTPUT - 2025-07-09 22:56:16.843 [RUST] [INFO] RUST_STDIN_JSON - Read 325 bytes from stdin
+2025-07-09 22:56:16,848 - __main__ - INFO - RUST_OUTPUT - 2025-07-09 22:56:16.844 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 4 points, algorithm: Some("delaunay")
+2025-07-09 22:56:16,848 - __main__ - INFO - RUST_OUTPUT - 2025-07-09 22:56:16.846 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 317 vertices, 551 triangles
+2025-07-09 22:56:16,849 - __main__ - INFO - RUST_OUTPUT - 2025-07-09 22:56:16.847 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (116911 chars)
+2025-07-09 22:56:16,849 - __main__ - ERROR - MESH_GENERATION - Error after 0.007s: Expecting value: line 1 column 1 (char 0)
+2025-07-09 22:56:16,853 - __main__ - INFO - SESSION_END [438ec75f] - Status: 500, Time: 0.014s, Size: 78bytes
+2025-07-09 22:56:41,486 - main - INFO - SESSION_START [f4c36f5e] - IP: 136.226.98.48, Method: GET, Path: /, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 22:56:41,487 - main - INFO - SESSION_END [f4c36f5e] - Status: 200, Time: 0.001s, Size: 17339bytes
+2025-07-09 22:56:41,820 - main - INFO - SESSION_START [f43ed83f] - IP: 136.226.98.48, Method: GET, Path: /favicon.ico, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 22:56:41,821 - main - INFO - SESSION_END [f43ed83f] - Status: 404, Time: 0.001s, Size: 22bytes
+2025-07-09 22:56:44,967 - main - INFO - SESSION_START [01b70346] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 22:56:44,973 - main - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: delaunay
+2025-07-09 22:56:44,973 - main - INFO - MESH_GENERATION - Calling Rust binary with 4 points
+2025-07-09 22:56:44,978 - main - INFO - RUST_OUTPUT - 2025-07-09 22:56:44.974 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 22:56:44,978 - main - INFO - RUST_OUTPUT - 2025-07-09 22:56:44.974 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 22:56:44,978 - main - INFO - RUST_OUTPUT - 2025-07-09 22:56:44.974 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 22:56:44,979 - main - INFO - RUST_OUTPUT - 2025-07-09 22:56:44.974 [RUST] [INFO] RUST_STDIN_JSON - Read 325 bytes from stdin
+2025-07-09 22:56:44,979 - main - INFO - RUST_OUTPUT - 2025-07-09 22:56:44.975 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 4 points, algorithm: Some("delaunay")
+2025-07-09 22:56:44,979 - main - INFO - RUST_OUTPUT - 2025-07-09 22:56:44.977 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 325 vertices, 559 triangles
+2025-07-09 22:56:44,979 - main - INFO - RUST_OUTPUT - 2025-07-09 22:56:44.977 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (121148 chars)
+2025-07-09 22:56:44,979 - main - ERROR - MESH_GENERATION - Error after 0.006s: Expecting value: line 1 column 1 (char 0)
+2025-07-09 22:56:44,980 - main - INFO - SESSION_END [01b70346] - Status: 500, Time: 0.013s, Size: 78bytes
+2025-07-09 23:01:03,356 - main - INFO - SESSION_START [aa3dbdd4] - IP: 136.226.98.48, Method: GET, Path: /, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:01:03,357 - main - INFO - SESSION_END [aa3dbdd4] - Status: 200, Time: 0.001s, Size: 17339bytes
+2025-07-09 23:01:06,274 - main - INFO - SESSION_START [07e3ac16] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:01:06,278 - main - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: delaunay
+2025-07-09 23:01:06,278 - main - INFO - MESH_GENERATION - Calling Rust binary with 4 points
+2025-07-09 23:01:06,283 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:06.279 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 23:01:06,283 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:06.279 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 23:01:06,283 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:06.279 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 23:01:06,283 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:06.279 [RUST] [INFO] RUST_STDIN_JSON - Read 325 bytes from stdin
+2025-07-09 23:01:06,283 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:06.279 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 4 points, algorithm: Some("delaunay")
+2025-07-09 23:01:06,284 - main - INFO - RUST_OUTPUT - Delaunay mesh Jacobian stats - Min: 44.002034, Max: 7088.067171, Avg: 276.466711
+2025-07-09 23:01:06,284 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:06.282 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 330 vertices, 561 triangles
+2025-07-09 23:01:06,284 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:06.282 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (121452 chars)
+2025-07-09 23:01:06,284 - main - INFO - MESH_GENERATION - Stdout length: 121453
+2025-07-09 23:01:06,284 - main - INFO - MESH_GENERATION - Stdout content (first 200 chars): {"vertices":[{"x":278.0,"y":509.875,"id":"1752102064119"},{"x":292.5925925925926,"y":507.912037037037,"id":null},{"x":307.18518518518516,"y":505.9490740740741,"id":null},{"x":321.77777777777777,"y":50
+2025-07-09 23:01:06,286 - main - INFO - MESH_GENERATION - Rust binary completed successfully
+2025-07-09 23:01:06,287 - main - INFO - MESH_GENERATION - Successfully generated mesh with 561 triangles, 330 vertices in 0.009s
+2025-07-09 23:01:06,309 - main - INFO - SESSION_END [07e3ac16] - Status: 200, Time: 0.035s, Size: 121419bytes
+2025-07-09 23:01:13,241 - main - INFO - SESSION_START [2465eb17] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:01:13,242 - main - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: paving
+2025-07-09 23:01:13,242 - main - INFO - MESH_GENERATION - Calling Rust binary with 4 points
+2025-07-09 23:01:13,247 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:13.244 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 23:01:13,247 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:13.244 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 23:01:13,248 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:13.244 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 23:01:13,248 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:13.244 [RUST] [INFO] RUST_STDIN_JSON - Read 323 bytes from stdin
+2025-07-09 23:01:13,248 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:13.244 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 4 points, algorithm: Some("paving")
+2025-07-09 23:01:13,248 - main - INFO - RUST_OUTPUT - Paving mesh Jacobian stats - Min: 16.000000, Max: 83047.000000, Avg: 161.478541
+2025-07-09 23:01:13,248 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:13.245 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 1238 vertices, 2 triangles
+2025-07-09 23:01:13,249 - main - INFO - RUST_OUTPUT - 2025-07-09 23:01:13.246 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (223847 chars)
+2025-07-09 23:01:13,249 - main - INFO - MESH_GENERATION - Stdout length: 223848
+2025-07-09 23:01:13,249 - main - INFO - MESH_GENERATION - Stdout content (first 200 chars): {"vertices":[{"x":278.0,"y":509.875,"id":"1752102064119"},{"x":672.0,"y":456.875,"id":"1752102064743"},{"x":577.0,"y":258.875,"id":"1752102065023"},{"x":268.0,"y":263.875,"id":"1752102065367"},{"x":27
+2025-07-09 23:01:13,254 - main - INFO - MESH_GENERATION - Rust binary completed successfully
+2025-07-09 23:01:13,256 - main - INFO - MESH_GENERATION - Successfully generated mesh with 2 triangles, 1238 vertices in 0.014s
+2025-07-09 23:01:13,309 - main - INFO - SESSION_END [2465eb17] - Status: 200, Time: 0.068s, Size: 223847bytes
+2025-07-09 23:04:46,230 - main - INFO - SESSION_START [decc8877] - IP: 136.226.98.48, Method: GET, Path: /, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:04:46,231 - main - INFO - SESSION_END [decc8877] - Status: 200, Time: 0.001s, Size: 17339bytes
+2025-07-09 23:04:52,032 - main - INFO - SESSION_START [b017e8e2] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:04:52,035 - main - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: paving
+2025-07-09 23:04:52,035 - main - INFO - MESH_GENERATION - Calling Rust binary with 4 points
+2025-07-09 23:04:52,039 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.037 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 23:04:52,040 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.037 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 23:04:52,040 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.037 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 23:04:52,040 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.037 [RUST] [INFO] RUST_STDIN_JSON - Read 323 bytes from stdin
+2025-07-09 23:04:52,040 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.037 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 4 points, algorithm: Some("paving")
+2025-07-09 23:04:52,040 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.037 [RUST] [INFO] Paving mesh Jacobian stats - Min: 16.000000, Max: 88479.000000, Avg: 164.814680
+2025-07-09 23:04:52,040 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.037 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 1360 vertices, 2 triangles
+2025-07-09 23:04:52,040 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:52.038 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (246263 chars)
+2025-07-09 23:04:52,040 - main - INFO - MESH_GENERATION - Stdout length: 246264
+2025-07-09 23:04:52,040 - main - INFO - MESH_GENERATION - Stdout content (first 200 chars): {"vertices":[{"x":175.0,"y":427.875,"id":"1752102287300"},{"x":522.0,"y":471.875,"id":"1752102287651"},{"x":656.0,"y":243.875,"id":"1752102288052"},{"x":298.0,"y":196.875,"id":"1752102288476"},{"x":29
+2025-07-09 23:04:52,045 - main - INFO - MESH_GENERATION - Rust binary completed successfully
+2025-07-09 23:04:52,045 - main - INFO - MESH_GENERATION - Successfully generated mesh with 2 triangles, 1360 vertices in 0.010s
+2025-07-09 23:04:52,103 - main - INFO - SESSION_END [b017e8e2] - Status: 200, Time: 0.071s, Size: 246263bytes
+2025-07-09 23:04:56,757 - main - INFO - SESSION_START [5ffa75f2] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:04:56,758 - main - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: paving
+2025-07-09 23:04:56,758 - main - INFO - MESH_GENERATION - Calling Rust binary with 4 points
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] RUST_STDIN_JSON - Read 324 bytes from stdin
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 4 points, algorithm: Some("paving")
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] Paving mesh Jacobian stats - Min: 153.367699, Max: 88479.000000, Avg: 1814.289316
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 138 vertices, 2 triangles
+2025-07-09 23:04:56,760 - main - INFO - RUST_OUTPUT - 2025-07-09 23:04:56.759 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (34481 chars)
+2025-07-09 23:04:56,761 - main - INFO - MESH_GENERATION - Stdout length: 34482
+2025-07-09 23:04:56,761 - main - INFO - MESH_GENERATION - Stdout content (first 200 chars): {"vertices":[{"x":175.0,"y":427.875,"id":"1752102287300"},{"x":522.0,"y":471.875,"id":"1752102287651"},{"x":656.0,"y":243.875,"id":"1752102288052"},{"x":298.0,"y":196.875,"id":"1752102288476"},{"x":30
+2025-07-09 23:04:56,761 - main - INFO - MESH_GENERATION - Rust binary completed successfully
+2025-07-09 23:04:56,762 - main - INFO - MESH_GENERATION - Successfully generated mesh with 2 triangles, 138 vertices in 0.004s
+2025-07-09 23:04:56,769 - main - INFO - SESSION_END [5ffa75f2] - Status: 200, Time: 0.012s, Size: 34481bytes
+2025-07-09 23:09:12,251 - main - INFO - SESSION_START [84dcb990] - IP: 136.226.98.48, Method: GET, Path: /, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:09:12,251 - main - INFO - SESSION_END [84dcb990] - Status: 200, Time: 0.001s, Size: 17410bytes
+2025-07-09 23:09:18,909 - main - INFO - SESSION_START [d65f5002] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:09:18,913 - main - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: annealing
+2025-07-09 23:09:18,913 - main - INFO - MESH_GENERATION - Calling Rust binary with 4 points
+2025-07-09 23:09:18,926 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 23:09:18,926 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 23:09:18,926 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] RUST_STDIN_JSON - Read 326 bytes from stdin
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 4 points, algorithm: Some("annealing")
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] ANNEALING - Starting simulated annealing mesh generation
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] ANNEALING - Refined boundary to 82 points
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.914 [RUST] [INFO] ANNEALING - Generated internal grid with 1704 points
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.922 [RUST] [INFO] ANNEALING - Created initial triangulation with 3488 triangles
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.922 [RUST] [INFO] ANNEALING - Starting optimization with temperature: 1000.00
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.922 [RUST] [INFO] ANNEALING - Quality threshold reached: 0.7293
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.922 [RUST] [INFO] ANNEALING - Optimization finished after 0 iterations
+2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.922 [RUST] [INFO] ANNEALING - Optimization complete
+2025-07-09 23:09:18,928 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.922 [RUST] [INFO] Annealing mesh Jacobian stats - Min: 0.200000, Max: 104.571429, Avg: 48.349771
+2025-07-09 23:09:18,928 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.922 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 1786 vertices, 3488 triangles
+2025-07-09 23:09:18,928 - main - INFO - RUST_OUTPUT - 2025-07-09 23:09:18.924 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (480614 chars)
+2025-07-09 23:09:18,928 - main - INFO - MESH_GENERATION - Stdout length: 480615
+2025-07-09 23:09:18,928 - main - INFO - MESH_GENERATION - Stdout content (first 200 chars): {"vertices":[{"x":103.0,"y":466.875,"id":"1752102553825"},{"x":117.8,"y":466.675,"id":null},{"x":132.6,"y":466.475,"id":null},{"x":147.4,"y":466.275,"id":null},{"x":162.2,"y":466.075,"id":null},{"x":1
+2025-07-09 23:09:18,938 - main - INFO - MESH_GENERATION - Rust binary completed successfully
+2025-07-09 23:09:18,938 - main - INFO - MESH_GENERATION - Successfully generated mesh with 3488 triangles, 1786 vertices in 0.026s
+2025-07-09 23:09:19,072 - main - INFO - SESSION_END [d65f5002] - Status: 200, Time: 0.162s, Size: 480581bytes
+2025-07-09 23:12:04,924 - main - INFO - SESSION_START [e4edebc3] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:12:04,926 - main - INFO - MESH_GENERATION - Starting mesh generation with 10 points, algorithm: annealing
+2025-07-09 23:12:04,926 - main - INFO - MESH_GENERATION - Calling Rust binary with 10 points
+2025-07-09 23:12:04,934 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.927 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 23:12:04,934 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.927 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 23:12:04,934 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.927 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 23:12:04,935 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.929 [RUST] [INFO] RUST_STDIN_JSON - Read 632 bytes from stdin
+2025-07-09 23:12:04,935 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.929 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 10 points, algorithm: Some("annealing")
+2025-07-09 23:12:04,935 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.929 [RUST] [INFO] ANNEALING - Starting simulated annealing mesh generation
+2025-07-09 23:12:04,936 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.929 [RUST] [INFO] ANNEALING - Refined boundary to 58 points
+2025-07-09 23:12:04,936 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.929 [RUST] [INFO] ANNEALING - Generated internal grid with 494 points
+2025-07-09 23:12:04,936 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.932 [RUST] [INFO] ANNEALING - Created initial triangulation with 1074 triangles
+2025-07-09 23:12:04,936 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.932 [RUST] [INFO] ANNEALING - Starting optimization with temperature: 1000.00
+2025-07-09 23:12:04,937 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.932 [RUST] [INFO] ANNEALING - Quality threshold reached: 0.6854
+2025-07-09 23:12:04,937 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.932 [RUST] [INFO] ANNEALING - Optimization finished after 0 iterations
+2025-07-09 23:12:04,937 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.932 [RUST] [INFO] ANNEALING - Optimization complete
+2025-07-09 23:12:04,937 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.932 [RUST] [INFO] Annealing mesh Jacobian stats - Min: 0.750000, Max: 1132.000000, Avg: 57.262570
+2025-07-09 23:12:04,938 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.932 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 552 vertices, 1074 triangles
+2025-07-09 23:12:04,938 - main - INFO - RUST_OUTPUT - 2025-07-09 23:12:04.933 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (147520 chars)
+2025-07-09 23:12:04,938 - main - INFO - MESH_GENERATION - Stdout length: 147521
+2025-07-09 23:12:04,938 - main - INFO - MESH_GENERATION - Stdout content (first 200 chars): {"vertices":[{"x":257.0,"y":254.875,"id":"1752102714003"},{"x":271.45454545454544,"y":254.42045454545453,"id":null},{"x":285.90909090909093,"y":253.9659090909091,"id":null},{"x":300.3636363636364,"y":
+2025-07-09 23:12:04,945 - main - INFO - MESH_GENERATION - Rust binary completed successfully
+2025-07-09 23:12:04,945 - main - INFO - MESH_GENERATION - Successfully generated mesh with 1074 triangles, 552 vertices in 0.020s
+2025-07-09 23:12:05,011 - main - INFO - SESSION_END [e4edebc3] - Status: 200, Time: 0.087s, Size: 147487bytes
+2025-07-09 23:13:02,242 - main - INFO - SESSION_START [55c31eb0] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh, User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0
+2025-07-09 23:13:02,243 - main - INFO - MESH_GENERATION - Starting mesh generation with 5 points, algorithm: annealing
+2025-07-09 23:13:02,243 - main - INFO - MESH_GENERATION - Calling Rust binary with 5 points
+2025-07-09 23:13:02,254 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] RUST_BINARY_START - Args: ["./target/release/mesh-generator", "json-stdin"]
+2025-07-09 23:13:02,254 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] RUST_BINARY_MODE - Running JSON stdin mode
+2025-07-09 23:13:02,255 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] RUST_STDIN_JSON - Reading input from stdin
+2025-07-09 23:13:02,255 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] RUST_STDIN_JSON - Read 377 bytes from stdin
+2025-07-09 23:13:02,255 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] RUST_STDIN_JSON - Parsed request with 5 points, algorithm: Some("annealing")
+2025-07-09 23:13:02,255 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] ANNEALING - Starting simulated annealing mesh generation
+2025-07-09 23:13:02,255 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] ANNEALING - Refined boundary to 60 points
+2025-07-09 23:13:02,256 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.245 [RUST] [INFO] ANNEALING - Generated internal grid with 947 points
+2025-07-09 23:13:02,256 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.250 [RUST] [INFO] ANNEALING - Created initial triangulation with 1952 triangles
+2025-07-09 23:13:02,256 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.250 [RUST] [INFO] ANNEALING - Starting optimization with temperature: 1000.00
+2025-07-09 23:13:02,256 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.250 [RUST] [INFO] ANNEALING - Quality threshold reached: 0.7204
+2025-07-09 23:13:02,256 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.250 [RUST] [INFO] ANNEALING - Optimization finished after 0 iterations
+2025-07-09 23:13:02,256 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.250 [RUST] [INFO] ANNEALING - Optimization complete
+2025-07-09 23:13:02,257 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.251 [RUST] [INFO] Annealing mesh Jacobian stats - Min: 0.700000, Max: 101.454545, Avg: 47.838627
+2025-07-09 23:13:02,257 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.251 [RUST] [INFO] RUST_STDIN_JSON - Generated mesh with 1007 vertices, 1952 triangles
+2025-07-09 23:13:02,257 - main - INFO - RUST_OUTPUT - 2025-07-09 23:13:02.253 [RUST] [INFO] RUST_STDIN_JSON - Serialized mesh to JSON (268118 chars)
+2025-07-09 23:13:02,257 - main - INFO - MESH_GENERATION - Stdout length: 268119
+2025-07-09 23:13:02,257 - main - INFO - MESH_GENERATION - Stdout content (first 200 chars): {"vertices":[{"x":277.0,"y":492.875,"id":"1752102777515"},{"x":291.3333333333333,"y":494.7638888888889,"id":null},{"x":305.6666666666667,"y":496.65277777777777,"id":null},{"x":320.0,"y":498.5416666666
+2025-07-09 23:13:02,264 - main - INFO - MESH_GENERATION - Rust binary completed successfully
+2025-07-09 23:13:02,264 - main - INFO - MESH_GENERATION - Successfully generated mesh with 1952 triangles, 1007 vertices in 0.022s
+2025-07-09 23:13:02,344 - main - INFO - SESSION_END [55c31eb0] - Status: 200, Time: 0.102s, Size: 268085bytes

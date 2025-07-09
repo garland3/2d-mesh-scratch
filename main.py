@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
@@ -9,8 +9,49 @@ import os
 import json
 import subprocess
 from datetime import datetime
+import logging
+import time
+import uuid
 
 app = FastAPI(title="2D Geometry & FEA Mesh Generator")
+
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Add middleware to log HTTP sessions
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    # Generate session ID
+    session_id = str(uuid.uuid4())[:8]
+    
+    # Log basic request info
+    start_time = time.time()
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "unknown")
+    
+    logger.info(f"SESSION_START [{session_id}] - IP: {client_ip}, Method: {request.method}, Path: {request.url.path}, User-Agent: {user_agent}")
+    
+    # Process request
+    try:
+        response = await call_next(request)
+        processing_time = time.time() - start_time
+        
+        # Log successful response
+        logger.info(f"SESSION_END [{session_id}] - Status: {response.status_code}, Time: {processing_time:.3f}s, Size: {response.headers.get('content-length', 'unknown')}bytes")
+        
+        return response
+    except Exception as e:
+        processing_time = time.time() - start_time
+        logger.error(f"SESSION_ERROR [{session_id}] - Error: {str(e)}, Time: {processing_time:.3f}s")
+        raise
 
 # Data models
 class Point(BaseModel):
@@ -26,6 +67,7 @@ class MeshRequest(BaseModel):
     geometry: Geometry
     max_area: Optional[float] = 0.1
     min_angle: Optional[float] = 20.0
+    algorithm: Optional[str] = "delaunay"
 
 # Global storage (in production, use a database)
 geometries = {}
@@ -62,6 +104,13 @@ async def read_root():
             <button onclick="generateMesh()">Generate Mesh</button>
             <button onclick="clearMesh()">Clear Mesh</button>
             <button onclick="exportCSV()">Export to CSV</button>
+            <br>
+            Algorithm: 
+            <select id="meshAlgorithm">
+                <option value="delaunay">Delaunay Triangulation</option>
+                <option value="paving">Paving (Quad-dominant)</option>
+                <option value="annealing">Simulated Annealing</option>
+            </select>
             <br>
             Max Area: <input type="number" id="maxArea" value="100" step="10"> (square units)
             Min Angle: <input type="number" id="minAngle" value="20" step="1"> (degrees)
@@ -243,20 +292,43 @@ async def read_root():
             }
             
             function drawMesh() {
-                ctx.strokeStyle = 'green';
-                ctx.lineWidth = 1;
+                // Draw triangles
+                if (mesh.triangles && mesh.triangles.length > 0) {
+                    ctx.strokeStyle = 'green';
+                    ctx.lineWidth = 1;
+                    
+                    mesh.triangles.forEach(triangle => {
+                        ctx.beginPath();
+                        const p1 = worldToCanvas(triangle[0].x, triangle[0].y);
+                        const p2 = worldToCanvas(triangle[1].x, triangle[1].y);
+                        const p3 = worldToCanvas(triangle[2].x, triangle[2].y);
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.lineTo(p3.x, p3.y);
+                        ctx.closePath();
+                        ctx.stroke();
+                    });
+                }
                 
-                mesh.triangles.forEach(triangle => {
-                    ctx.beginPath();
-                    const p1 = worldToCanvas(triangle[0].x, triangle[0].y);
-                    const p2 = worldToCanvas(triangle[1].x, triangle[1].y);
-                    const p3 = worldToCanvas(triangle[2].x, triangle[2].y);
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.lineTo(p3.x, p3.y);
-                    ctx.closePath();
-                    ctx.stroke();
-                });
+                // Draw quads
+                if (mesh.quads && mesh.quads.length > 0) {
+                    ctx.strokeStyle = 'purple';
+                    ctx.lineWidth = 1;
+                    
+                    mesh.quads.forEach(quad => {
+                        ctx.beginPath();
+                        const p1 = worldToCanvas(quad[0].x, quad[0].y);
+                        const p2 = worldToCanvas(quad[1].x, quad[1].y);
+                        const p3 = worldToCanvas(quad[2].x, quad[2].y);
+                        const p4 = worldToCanvas(quad[3].x, quad[3].y);
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.lineTo(p3.x, p3.y);
+                        ctx.lineTo(p4.x, p4.y);
+                        ctx.closePath();
+                        ctx.stroke();
+                    });
+                }
             }
             
             function updatePointsList() {
@@ -302,6 +374,7 @@ async def read_root():
                 
                 const maxArea = parseFloat(document.getElementById('maxArea').value);
                 const minAngle = parseFloat(document.getElementById('minAngle').value);
+                const algorithm = document.getElementById('meshAlgorithm').value;
                 
                 // Convert max area from UI units to mesh units
                 // UI uses square units where 1 unit = 1 pixel
@@ -313,6 +386,7 @@ async def read_root():
                 console.log('Max Area (UI):', maxArea);
                 console.log('Max Area (mesh):', meshMaxArea);
                 console.log('Min Angle:', minAngle);
+                console.log('Algorithm:', algorithm);
                 
                 const requestData = {
                     geometry: {
@@ -320,7 +394,8 @@ async def read_root():
                         name: 'interactive_geometry'
                     },
                     max_area: meshMaxArea,
-                    min_angle: minAngle
+                    min_angle: minAngle,
+                    algorithm: algorithm
                 };
                 
                 console.log('Request data:', JSON.stringify(requestData, null, 2));
@@ -344,11 +419,18 @@ async def read_root():
                         console.log('Mesh vertices count:', mesh.vertices.length);
                         
                         drawPoints();
-                        document.getElementById('meshInfo').innerHTML = `
+                        
+                        let meshInfoHtml = `
                             <h3>Mesh Info:</h3>
-                            <p>Triangles: ${mesh.triangles.length}</p>
                             <p>Vertices: ${mesh.vertices.length}</p>
+                            <p>Triangles: ${mesh.triangles.length}</p>
                         `;
+                        
+                        if (mesh.quads && mesh.quads.length > 0) {
+                            meshInfoHtml += `<p>Quads: ${mesh.quads.length}</p>`;
+                        }
+                        
+                        document.getElementById('meshInfo').innerHTML = meshInfoHtml;
                     } else {
                         const errorText = await response.text();
                         console.error('Error response:', errorText);
@@ -434,7 +516,11 @@ async def get_geometry(geometry_id: str):
 @app.post("/generate-mesh")
 async def generate_mesh(request: MeshRequest):
     if len(request.geometry.points) < 3:
+        logger.warning(f"MESH_GENERATION - Insufficient points: {len(request.geometry.points)}")
         raise HTTPException(status_code=400, detail="Need at least 3 points to generate mesh")
+    
+    start_time = time.time()
+    logger.info(f"MESH_GENERATION - Starting mesh generation with {len(request.geometry.points)} points, algorithm: {request.algorithm}")
     
     try:
         # Prepare input for Rust binary
@@ -444,10 +530,11 @@ async def generate_mesh(request: MeshRequest):
                 "name": request.geometry.name
             },
             "max_area": request.max_area,
-            "min_angle": request.min_angle
+            "min_angle": request.min_angle,
+            "algorithm": request.algorithm
         }
         
-        print(f"Calling Rust binary with input: {rust_input}")
+        logger.info(f"MESH_GENERATION - Calling Rust binary with {len(rust_input['geometry']['points'])} points")
         
         # Call Rust binary
         process = subprocess.Popen(
@@ -460,13 +547,32 @@ async def generate_mesh(request: MeshRequest):
         
         stdout, stderr = process.communicate(input=json.dumps(rust_input))
         
+        # Log Rust binary output to our log file
+        if stderr:
+            for line in stderr.strip().split('\n'):
+                if line.strip():
+                    logger.info(f"RUST_OUTPUT - {line}")
+        
         if process.returncode != 0:
-            print(f"Rust binary error: {stderr}")
+            logger.error(f"MESH_GENERATION - Rust binary error: {stderr}")
             raise Exception(f"Rust binary failed: {stderr}")
         
+        # Debug: Log stdout details
+        logger.info(f"MESH_GENERATION - Stdout length: {len(stdout)}")
+        logger.info(f"MESH_GENERATION - Stdout content (first 200 chars): {stdout[:200]}")
+        
         # Parse output from Rust binary
-        mesh_output = json.loads(stdout)
-        print(f"Rust binary output: {mesh_output}")
+        if not stdout.strip():
+            logger.error(f"MESH_GENERATION - Empty stdout from Rust binary")
+            raise Exception("Rust binary produced empty stdout")
+        
+        try:
+            mesh_output = json.loads(stdout)
+        except json.JSONDecodeError as e:
+            logger.error(f"MESH_GENERATION - JSON decode error: {e}")
+            logger.error(f"MESH_GENERATION - Stdout was: {stdout}")
+            raise Exception(f"Failed to parse JSON from Rust binary: {e}")
+        logger.info(f"MESH_GENERATION - Rust binary completed successfully")
         
         # Convert to expected format (already in the right format from Rust)
         mesh_result = {
@@ -475,25 +581,34 @@ async def generate_mesh(request: MeshRequest):
             'triangle_indices': mesh_output['triangle_indices']
         }
         
+        # Add quads if they exist (for paving algorithm)
+        if 'quads' in mesh_output and mesh_output['quads']:
+            mesh_result['quads'] = mesh_output['quads']
+        if 'quad_indices' in mesh_output and mesh_output['quad_indices']:
+            mesh_result['quad_indices'] = mesh_output['quad_indices']
+        
         # Store mesh
         mesh_id = datetime.now().isoformat()
         meshes[mesh_id] = mesh_result
         
-        print(f"Successfully generated mesh with {len(mesh_result['triangles'])} triangles")
+        processing_time = time.time() - start_time
+        logger.info(f"MESH_GENERATION - Successfully generated mesh with {len(mesh_result['triangles'])} triangles, {len(mesh_result['vertices'])} vertices in {processing_time:.3f}s")
+        
         return mesh_result
         
     except Exception as e:
-        print(f"Mesh generation error: {str(e)}")
+        processing_time = time.time() - start_time
+        logger.error(f"MESH_GENERATION - Error after {processing_time:.3f}s: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Mesh generation failed: {str(e)}")
 
 @app.post("/export-csv")
 async def export_csv(request: Geometry):
+    start_time = time.time()
+    logger.info(f"CSV_EXPORT - Starting CSV export with {len(request.points)} points")
+    
     try:
-        print(f"CSV Export request received")
-        print(f"Request points: {[{'x': p.x, 'y': p.y} for p in request.points]}")
-        
         # Prepare input for Rust binary (need to create a dummy mesh request)
         rust_input = {
             "geometry": {
@@ -504,7 +619,7 @@ async def export_csv(request: Geometry):
             "min_angle": 20.0
         }
         
-        print(f"Calling Rust binary for CSV export with input: {rust_input}")
+        logger.info(f"CSV_EXPORT - Calling Rust binary for CSV export")
         
         # Call Rust binary for CSV export
         process = subprocess.Popen(
@@ -517,13 +632,18 @@ async def export_csv(request: Geometry):
         
         stdout, stderr = process.communicate(input=json.dumps(rust_input))
         
+        # Log Rust binary output to our log file
+        if stderr:
+            for line in stderr.strip().split('\n'):
+                if line.strip():
+                    logger.info(f"RUST_OUTPUT - {line}")
+        
         if process.returncode != 0:
-            print(f"Rust binary error: {stderr}")
+            logger.error(f"CSV_EXPORT - Rust binary error: {stderr}")
             raise Exception(f"Rust binary failed: {stderr}")
         
         csv_content = stdout
-        print(f"CSV content length: {len(csv_content)}")
-        print(f"CSV content preview: {csv_content[:200]}...")
+        logger.info(f"CSV_EXPORT - Generated CSV content with {len(csv_content)} characters")
         
         # Create a temporary file for the CSV
         import tempfile
@@ -531,7 +651,8 @@ async def export_csv(request: Geometry):
             tmp_file.write(csv_content)
             tmp_file_path = tmp_file.name
         
-        print(f"CSV file created at: {tmp_file_path}")
+        processing_time = time.time() - start_time
+        logger.info(f"CSV_EXPORT - Successfully created CSV file at {tmp_file_path} in {processing_time:.3f}s")
         
         return FileResponse(
             path=tmp_file_path,
@@ -540,7 +661,8 @@ async def export_csv(request: Geometry):
         )
     
     except Exception as e:
-        print(f"CSV export error: {str(e)}")
+        processing_time = time.time() - start_time
+        logger.error(f"CSV_EXPORT - Error after {processing_time:.3f}s: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"CSV export failed: {str(e)}")

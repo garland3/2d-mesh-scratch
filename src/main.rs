@@ -1,11 +1,29 @@
 use mesh_generator::*;
 use std::env;
 use std::fs;
+use log::{info, error};
 
 fn main() {
+    // Initialize logging to stderr
+    env_logger::Builder::new()
+        .filter_level(log::LevelFilter::Info)
+        .format(|buf, record| {
+            use std::io::Write;
+            writeln!(buf, "{} [RUST] [{}] {}", 
+                chrono::Utc::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+                record.level(),
+                record.args()
+            )
+        })
+        .target(env_logger::Target::Stderr)
+        .init();
+
     let args: Vec<String> = env::args().collect();
     
+    info!("RUST_BINARY_START - Args: {:?}", args);
+    
     if args.len() < 2 {
+        error!("RUST_BINARY_ERROR - Insufficient arguments");
         println!("Usage: {} <mode> [options]", args[0]);
         println!("Modes:");
         println!("  test - Run with example data");
@@ -17,54 +35,82 @@ fn main() {
     }
 
     match args[1].as_str() {
-        "test" => run_test(),
+        "test" => {
+            info!("RUST_BINARY_MODE - Running test mode");
+            run_test();
+        }
         "json" => {
             if args.len() < 3 {
+                error!("RUST_BINARY_ERROR - JSON mode requires file argument");
                 println!("Usage: {} json <file>", args[0]);
                 return;
             }
+            info!("RUST_BINARY_MODE - Running JSON file mode with file: {}", args[2]);
             run_from_json(&args[2]);
         }
-        "json-stdin" => run_from_stdin(),
-        "csv-stdin" => run_csv_from_stdin(),
-        "interactive" => run_interactive(),
-        _ => println!("Unknown mode: {}", args[1]),
+        "json-stdin" => {
+            info!("RUST_BINARY_MODE - Running JSON stdin mode");
+            run_from_stdin();
+        }
+        "csv-stdin" => {
+            info!("RUST_BINARY_MODE - Running CSV stdin mode");
+            run_csv_from_stdin();
+        }
+        "interactive" => {
+            info!("RUST_BINARY_MODE - Running interactive mode");
+            run_interactive();
+        }
+        _ => {
+            error!("RUST_BINARY_ERROR - Unknown mode: {}", args[1]);
+            println!("Unknown mode: {}", args[1]);
+        }
     }
 }
 
 fn run_from_stdin() {
     use std::io::{self, Read};
     
+    info!("RUST_STDIN_JSON - Reading input from stdin");
     let mut input = String::new();
     match io::stdin().read_to_string(&mut input) {
-        Ok(_) => {
+        Ok(bytes_read) => {
+            info!("RUST_STDIN_JSON - Read {} bytes from stdin", bytes_read);
             match serde_json::from_str::<MeshRequest>(&input) {
                 Ok(request) => {
+                    info!("RUST_STDIN_JSON - Parsed request with {} points, algorithm: {:?}", 
+                          request.geometry.points.len(), request.algorithm);
                     match generate_mesh(request) {
                         Ok(mesh) => {
+                            info!("RUST_STDIN_JSON - Generated mesh with {} vertices, {} triangles", 
+                                  mesh.vertices.len(), mesh.triangle_indices.len());
                             match serde_json::to_string(&mesh) {
                                 Ok(json_output) => {
+                                    info!("RUST_STDIN_JSON - Serialized mesh to JSON ({} chars)", json_output.len());
                                     println!("{}", json_output);
                                 }
                                 Err(e) => {
+                                    error!("RUST_STDIN_JSON - Error serializing mesh to JSON: {}", e);
                                     eprintln!("Error serializing mesh to JSON: {}", e);
                                     std::process::exit(1);
                                 }
                             }
                         }
                         Err(e) => {
+                            error!("RUST_STDIN_JSON - Error generating mesh: {}", e);
                             eprintln!("Error generating mesh: {}", e);
                             std::process::exit(1);
                         }
                     }
                 }
                 Err(e) => {
+                    error!("RUST_STDIN_JSON - Error parsing JSON input: {}", e);
                     eprintln!("Error parsing JSON input: {}", e);
                     std::process::exit(1);
                 }
             }
         }
         Err(e) => {
+            error!("RUST_STDIN_JSON - Error reading from stdin: {}", e);
             eprintln!("Error reading from stdin: {}", e);
             std::process::exit(1);
         }
@@ -74,36 +120,46 @@ fn run_from_stdin() {
 fn run_csv_from_stdin() {
     use std::io::{self, Read};
     
+    info!("RUST_STDIN_CSV - Reading input from stdin");
     let mut input = String::new();
     match io::stdin().read_to_string(&mut input) {
-        Ok(_) => {
+        Ok(bytes_read) => {
+            info!("RUST_STDIN_CSV - Read {} bytes from stdin", bytes_read);
             match serde_json::from_str::<MeshRequest>(&input) {
                 Ok(request) => {
+                    info!("RUST_STDIN_CSV - Parsed request with {} points", request.geometry.points.len());
                     match generate_mesh(request.clone()) {
                         Ok(mesh) => {
+                            info!("RUST_STDIN_CSV - Generated mesh with {} vertices, {} triangles", 
+                                  mesh.vertices.len(), mesh.triangle_indices.len());
                             match export_to_csv(&request.geometry, Some(&mesh)) {
                                 Ok(csv_content) => {
+                                    info!("RUST_STDIN_CSV - Generated CSV with {} characters", csv_content.len());
                                     print!("{}", csv_content);
                                 }
                                 Err(e) => {
+                                    error!("RUST_STDIN_CSV - Error generating CSV: {}", e);
                                     eprintln!("Error generating CSV: {}", e);
                                     std::process::exit(1);
                                 }
                             }
                         }
                         Err(e) => {
+                            error!("RUST_STDIN_CSV - Error generating mesh: {}", e);
                             eprintln!("Error generating mesh: {}", e);
                             std::process::exit(1);
                         }
                     }
                 }
                 Err(e) => {
+                    error!("RUST_STDIN_CSV - Error parsing JSON input: {}", e);
                     eprintln!("Error parsing JSON input: {}", e);
                     std::process::exit(1);
                 }
             }
         }
         Err(e) => {
+            error!("RUST_STDIN_CSV - Error reading from stdin: {}", e);
             eprintln!("Error reading from stdin: {}", e);
             std::process::exit(1);
         }
