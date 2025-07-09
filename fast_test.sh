@@ -1,0 +1,71 @@
+#!/bin/bash
+
+# Fast test script for mesh generator
+# Tests various scenarios to ensure unit consistency
+
+echo "=== Fast Test Script for Mesh Generator ==="
+echo
+
+# Build the project
+echo "Building Rust binary..."
+cargo build --release
+if [ $? -ne 0 ]; then
+    echo "Build failed!"
+    exit 1
+fi
+echo "Build successful!"
+echo
+
+# Test 1: Basic triangulation (no refinement)
+echo "Test 1: Basic triangulation (3 points, no refinement)"
+echo '{"geometry":{"points":[{"x":0.0,"y":0.0},{"x":100.0,"y":0.0},{"x":50.0,"y":100.0}],"name":"test"},"max_area":null,"min_angle":null}' | ./target/release/mesh-generator json-stdin
+echo
+
+# Test 2: Small area refinement
+echo "Test 2: Small area refinement (should generate more triangles)"
+echo '{"geometry":{"points":[{"x":0.0,"y":0.0},{"x":200.0,"y":0.0},{"x":200.0,"y":200.0},{"x":0.0,"y":200.0}],"name":"test"},"max_area":500.0,"min_angle":20.0}' | timeout 5s ./target/release/mesh-generator json-stdin
+if [ $? -eq 124 ]; then
+    echo "Test timed out - mesh refinement may be hanging"
+fi
+echo
+
+# Test 3: Very small area (should create many triangles)
+echo "Test 3: Very small area (100 square units)"
+echo '{"geometry":{"points":[{"x":0.0,"y":0.0},{"x":100.0,"y":0.0},{"x":100.0,"y":100.0},{"x":0.0,"y":100.0}],"name":"test"},"max_area":100.0,"min_angle":20.0}' | timeout 5s ./target/release/mesh-generator json-stdin
+if [ $? -eq 124 ]; then
+    echo "Test timed out - mesh refinement may be hanging"
+fi
+echo
+
+# Test 4: CSV export
+echo "Test 4: CSV export"
+echo '{"geometry":{"points":[{"x":0.0,"y":0.0},{"x":100.0,"y":0.0},{"x":50.0,"y":100.0}],"name":"test"},"max_area":50.0,"min_angle":20.0}' | timeout 5s ./target/release/mesh-generator csv-stdin
+if [ $? -eq 124 ]; then
+    echo "CSV export timed out"
+fi
+echo
+
+# Test 5: Area calculation verification
+echo "Test 5: Area calculation verification"
+echo "Creating a 100x100 square with max_area=100"
+echo "Expected: Many small triangles (area < 100 each)"
+echo '{"geometry":{"points":[{"x":0.0,"y":0.0},{"x":100.0,"y":0.0},{"x":100.0,"y":100.0},{"x":0.0,"y":100.0}],"name":"square"},"max_area":100.0,"min_angle":20.0}' | timeout 3s ./target/release/mesh-generator json-stdin | jq '.triangles | length'
+if [ $? -eq 124 ]; then
+    echo "Area test timed out"
+fi
+echo
+
+echo "=== Test Summary ==="
+echo "If tests timed out, the mesh refinement algorithm needs optimization"
+echo "Expected behavior:"
+echo "- Test 1: 2 triangles (basic triangulation)"
+echo "- Test 2: More triangles than test 1"
+echo "- Test 3: Even more triangles"
+echo "- Test 4: CSV output with mesh data"
+echo "- Test 5: Triangle count > 2"
+echo
+echo "Current coordinate system:"
+echo "- Canvas: 800x600 pixels"
+echo "- World coordinates: 1 unit = 1 pixel"
+echo "- Grid spacing: 50 units"
+echo "- Max area: square units (e.g., 100 = 10x10 pixel triangle)"
