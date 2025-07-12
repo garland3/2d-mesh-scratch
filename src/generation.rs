@@ -2,7 +2,7 @@ use crate::geometry::{Point, Geometry, MeshRequest};
 use crate::mesh::Mesh;
 use crate::delaunay::DelaunayTriangulator;
 use crate::paving::PavingMeshGenerator;
-use crate::annealing::SimulatedAnnealingMeshGenerator;
+use crate::annealing::{GridAnnealingMeshGenerator, GeneralAnnealingOptimizer};
 
 fn refine_boundary_edges(boundary_points: Vec<Point>, max_area: f64) -> Result<Vec<Point>, String> {
     let target_edge_length = (4.0 * max_area / 3.0_f64.sqrt()).sqrt();
@@ -42,14 +42,26 @@ pub fn generate_mesh(request: MeshRequest) -> Result<Mesh, String> {
 
     let algorithm = request.algorithm.clone().unwrap_or_else(|| "delaunay".to_string());
     
-    match algorithm.as_str() {
-        "paving" => generate_paving_mesh(request),
-        "annealing" => generate_annealing_mesh(request),
-        "delaunay" | _ => generate_delaunay_mesh(request),
+    let mut mesh = match algorithm.as_str() {
+        "paving" => generate_paving_mesh(request.clone())?,
+        "grid-annealing" => generate_grid_annealing_mesh(request.clone())?,
+        "delaunay" | _ => generate_delaunay_mesh(request.clone())?,
+    };
+
+    // Apply general annealing optimization if requested
+    if let Some(ref annealing_options) = request.annealing_options {
+        if annealing_options.check_volume.unwrap_or(false) || 
+           annealing_options.check_aspect_ratio.unwrap_or(false) {
+            log::info!("Applying general annealing optimization to {} mesh", algorithm);
+            let mut optimizer = GeneralAnnealingOptimizer::from_options(annealing_options);
+            optimizer.optimize_mesh(&mut mesh)?;
+        }
     }
+
+    Ok(mesh)
 }
 
-fn generate_annealing_mesh(request: MeshRequest) -> Result<Mesh, String> {
+fn generate_grid_annealing_mesh(request: MeshRequest) -> Result<Mesh, String> {
     if request.geometry.points.len() < 3 {
         return Err("Need at least 3 points for annealing mesh".to_string());
     }
@@ -66,14 +78,14 @@ fn generate_annealing_mesh(request: MeshRequest) -> Result<Mesh, String> {
         let cooling_rate = annealing_options.cooling_rate.unwrap_or(0.995);
         let quality_threshold = annealing_options.quality_threshold.unwrap_or(quality_threshold);
         
-        SimulatedAnnealingMeshGenerator::with_options(
+        GridAnnealingMeshGenerator::with_options(
             request.geometry.points, 
             temperature,
             cooling_rate,
             quality_threshold
         )
     } else {
-        SimulatedAnnealingMeshGenerator::new(
+        GridAnnealingMeshGenerator::new(
             request.geometry.points, 
             quality_threshold
         )

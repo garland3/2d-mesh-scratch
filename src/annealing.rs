@@ -4,7 +4,7 @@ use crate::elements::Triangle;
 use crate::mesh::Mesh;
 use crate::delaunay::DelaunayTriangulator;
 
-pub struct SimulatedAnnealingMeshGenerator {
+pub struct GridAnnealingMeshGenerator {
     boundary_points: Vec<Point>,
     internal_points: Vec<Point>,
     triangles: Vec<Triangle>,
@@ -14,7 +14,7 @@ pub struct SimulatedAnnealingMeshGenerator {
     cooling_rate: f64,
 }
 
-impl SimulatedAnnealingMeshGenerator {
+impl GridAnnealingMeshGenerator {
     pub fn new(boundary_points: Vec<Point>, quality_threshold: f64) -> Self {
         Self {
             boundary_points,
@@ -304,5 +304,198 @@ impl SimulatedAnnealingMeshGenerator {
         }
         
         inside
+    }
+}
+
+pub struct GeneralAnnealingOptimizer {
+    pub temperature: f64,
+    pub cooling_rate: f64,
+    pub max_iterations: u32,
+    pub check_volume: bool,
+    pub check_aspect_ratio: bool,
+    pub target_aspect_ratio: f64,
+    pub volume_weight: f64,
+    pub aspect_ratio_weight: f64,
+    rng: rand::rngs::ThreadRng,
+}
+
+impl GeneralAnnealingOptimizer {
+    pub fn new() -> Self {
+        Self {
+            temperature: 1000.0,
+            cooling_rate: 0.995,
+            max_iterations: 10000,
+            check_volume: true,
+            check_aspect_ratio: true,
+            target_aspect_ratio: 1.73, // Ideal equilateral triangle ratio
+            volume_weight: 0.3,
+            aspect_ratio_weight: 0.7,
+            rng: rand::thread_rng(),
+        }
+    }
+
+    pub fn from_options(options: &crate::geometry::AnnealingOptions) -> Self {
+        Self {
+            temperature: options.temperature.unwrap_or(1000.0),
+            cooling_rate: options.cooling_rate.unwrap_or(0.995),
+            max_iterations: options.max_iterations.unwrap_or(10000),
+            check_volume: options.check_volume.unwrap_or(true),
+            check_aspect_ratio: options.check_aspect_ratio.unwrap_or(true),
+            target_aspect_ratio: options.target_aspect_ratio.unwrap_or(1.73),
+            volume_weight: options.volume_weight.unwrap_or(0.3),
+            aspect_ratio_weight: options.aspect_ratio_weight.unwrap_or(0.7),
+            rng: rand::thread_rng(),
+        }
+    }
+
+    pub fn optimize_mesh(&mut self, mesh: &mut Mesh) -> Result<(), String> {
+        log::info!("GENERAL ANNEALING - Starting optimization");
+        
+        let mut temperature = self.temperature;
+        let mut iterations = 0;
+        
+        let boundary_count = self.count_boundary_vertices(&mesh.vertices);
+        
+        while iterations < self.max_iterations && temperature > 0.1 {
+            let current_quality = self.calculate_enhanced_quality(mesh);
+            
+            if !mesh.vertices.is_empty() && mesh.vertices.len() > boundary_count {
+                let vertex_idx = self.rng.gen_range(boundary_count..mesh.vertices.len());
+                let old_vertex = mesh.vertices[vertex_idx].clone();
+                
+                let perturbation_radius = temperature * 0.05;
+                let dx = self.rng.gen_range(-perturbation_radius..perturbation_radius);
+                let dy = self.rng.gen_range(-perturbation_radius..perturbation_radius);
+                
+                mesh.vertices[vertex_idx] = Point::new(old_vertex.x + dx, old_vertex.y + dy);
+                
+                self.update_triangles_after_vertex_move(mesh, vertex_idx);
+                
+                let new_quality = self.calculate_enhanced_quality(mesh);
+                let quality_improvement = new_quality - current_quality;
+                
+                if quality_improvement > 0.0 || 
+                   self.rng.gen::<f64>() < (quality_improvement / temperature).exp() {
+                    if iterations % 1000 == 0 {
+                        log::info!("GENERAL ANNEALING - Iteration {}: quality={:.4}, temp={:.2}", 
+                                  iterations, new_quality, temperature);
+                    }
+                } else {
+                    mesh.vertices[vertex_idx] = old_vertex;
+                    self.update_triangles_after_vertex_move(mesh, vertex_idx);
+                }
+            }
+            
+            temperature *= self.cooling_rate;
+            iterations += 1;
+        }
+        
+        log::info!("GENERAL ANNEALING - Optimization finished after {} iterations", iterations);
+        Ok(())
+    }
+
+    fn calculate_enhanced_quality(&self, mesh: &Mesh) -> f64 {
+        if mesh.triangles.is_empty() {
+            return 0.0;
+        }
+
+        let mut total_quality = 0.0;
+        let mut valid_triangles = 0;
+
+        for (i, triangle_vertices) in mesh.triangle_indices.iter().enumerate() {
+            let triangle = Triangle::new(*triangle_vertices, &mesh.vertices);
+            
+            let jacobian = triangle.jacobian(&mesh.vertices);
+            if jacobian > 0.0 {
+                let mut quality_score = 0.0;
+                let mut weight_sum = 0.0;
+
+                // Basic angle quality
+                let min_angle = triangle.min_angle(&mesh.vertices);
+                let angle_quality = min_angle / 60.0;
+                quality_score += angle_quality * 0.5;
+                weight_sum += 0.5;
+
+                // Volume uniformity check
+                if self.check_volume {
+                    let volume = triangle.volume(&mesh.vertices);
+                    let volume_quality = self.calculate_volume_quality(volume, mesh);
+                    quality_score += volume_quality * self.volume_weight;
+                    weight_sum += self.volume_weight;
+                }
+
+                // Aspect ratio check
+                if self.check_aspect_ratio {
+                    let aspect_ratio = triangle.aspect_ratio(&mesh.vertices);
+                    let aspect_quality = self.calculate_aspect_ratio_quality(aspect_ratio);
+                    quality_score += aspect_quality * self.aspect_ratio_weight;
+                    weight_sum += self.aspect_ratio_weight;
+                }
+
+                if weight_sum > 0.0 {
+                    total_quality += quality_score / weight_sum;
+                    valid_triangles += 1;
+                }
+            }
+        }
+
+        if valid_triangles > 0 {
+            total_quality / valid_triangles as f64
+        } else {
+            0.0
+        }
+    }
+
+    fn calculate_volume_quality(&self, volume: f64, mesh: &Mesh) -> f64 {
+        if mesh.triangle_indices.is_empty() {
+            return 1.0;
+        }
+
+        // Calculate average volume for comparison
+        let total_volume: f64 = mesh.triangle_indices.iter()
+            .map(|&vertices| Triangle::new(vertices, &mesh.vertices).volume(&mesh.vertices))
+            .sum();
+        let avg_volume = total_volume / mesh.triangle_indices.len() as f64;
+
+        if avg_volume == 0.0 {
+            return 1.0;
+        }
+
+        // Quality decreases as volume deviates from average
+        let volume_ratio = if volume > avg_volume {
+            avg_volume / volume
+        } else {
+            volume / avg_volume
+        };
+
+        volume_ratio.max(0.1) // Minimum quality of 0.1
+    }
+
+    fn calculate_aspect_ratio_quality(&self, aspect_ratio: f64) -> f64 {
+        // Quality decreases as aspect ratio deviates from target
+        let ratio_diff = (aspect_ratio - self.target_aspect_ratio).abs();
+        let normalized_diff = ratio_diff / self.target_aspect_ratio;
+        
+        (1.0 - normalized_diff.min(1.0)).max(0.1) // Minimum quality of 0.1
+    }
+
+    fn count_boundary_vertices(&self, _vertices: &[Point]) -> usize {
+        // For now, assume first part of vertices are boundary
+        // This could be enhanced to actually detect boundary vertices
+        0
+    }
+
+    fn update_triangles_after_vertex_move(&self, mesh: &mut Mesh, moved_vertex_idx: usize) {
+        // Update triangles that contain the moved vertex
+        for (i, triangle_vertices) in mesh.triangle_indices.iter().enumerate() {
+            if triangle_vertices.contains(&moved_vertex_idx) {
+                let triangle_points = vec![
+                    mesh.vertices[triangle_vertices[0]].clone(),
+                    mesh.vertices[triangle_vertices[1]].clone(),
+                    mesh.vertices[triangle_vertices[2]].clone(),
+                ];
+                mesh.triangles[i] = triangle_points;
+            }
+        }
     }
 }

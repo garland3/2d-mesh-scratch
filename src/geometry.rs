@@ -51,6 +51,11 @@ pub struct AnnealingOptions {
     pub cooling_rate: Option<f64>,
     pub quality_threshold: Option<f64>,
     pub max_iterations: Option<u32>,
+    pub check_volume: Option<bool>,
+    pub check_aspect_ratio: Option<bool>,
+    pub target_aspect_ratio: Option<f64>,
+    pub volume_weight: Option<f64>,
+    pub aspect_ratio_weight: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -68,6 +68,11 @@ class AnnealingOptions(BaseModel):
     cooling_rate: Optional[float] = 0.995
     quality_threshold: Optional[float] = 0.8
     max_iterations: Optional[int] = 10000
+    check_volume: Optional[bool] = True
+    check_aspect_ratio: Optional[bool] = True
+    target_aspect_ratio: Optional[float] = 1.73
+    volume_weight: Optional[float] = 0.3
+    aspect_ratio_weight: Optional[float] = 0.7
 
 class MeshRequest(BaseModel):
     geometry: Geometry
@@ -116,19 +121,26 @@ async def read_root():
             <select id="meshAlgorithm">
                 <option value="delaunay">Delaunay Triangulation</option>
                 <option value="paving">Paving (Quad-dominant)</option>
-                <option value="annealing">Simulated Annealing</option>
+                <option value="grid-annealing">Grid Annealing</option>
             </select>
             <br>
             Max Area: <input type="number" id="maxArea" value="100" step="10"> (square units)
             Min Angle: <input type="number" id="minAngle" value="20" step="1"> (degrees)
             <br>
             <div id="annealingOptions" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ccc; background: #f9f9f9;">
-                <strong>Annealing Options:</strong><br>
+                <strong>General Annealing Options:</strong><br>
+                <input type="checkbox" id="checkVolume" checked> Check Volume Uniformity
+                <input type="checkbox" id="checkAspectRatio" checked> Check Aspect Ratio
+                <br>
                 Initial Temperature: <input type="number" id="temperature" value="1000" step="100" min="1"> 
                 Cooling Rate: <input type="number" id="coolingRate" value="0.995" step="0.001" min="0.001" max="0.999">
                 <br>
                 Quality Threshold: <input type="number" id="qualityThreshold" value="0.8" step="0.1" min="0.1" max="1.0">
                 Max Iterations: <input type="number" id="maxIterations" value="10000" step="1000" min="100">
+                <br>
+                Target Aspect Ratio: <input type="number" id="targetAspectRatio" value="1.73" step="0.1" min="1.0" max="10.0">
+                Volume Weight: <input type="number" id="volumeWeight" value="0.3" step="0.1" min="0.0" max="1.0">
+                Aspect Ratio Weight: <input type="number" id="aspectRatioWeight" value="0.7" step="0.1" min="0.0" max="1.0">
             </div>
         </div>
         
@@ -169,15 +181,24 @@ async def read_root():
             
             canvas.addEventListener('click', addPoint);
             
-            // Show/hide annealing options based on algorithm selection
+            // Show annealing options for grid-annealing
             document.getElementById('meshAlgorithm').addEventListener('change', function() {
                 const annealingOptions = document.getElementById('annealingOptions');
-                if (this.value === 'annealing') {
+                if (this.value === 'grid-annealing') {
                     annealingOptions.style.display = 'block';
                 } else {
                     annealingOptions.style.display = 'none';
                 }
             });
+            
+            // Add button to show general annealing options for any algorithm
+            const generalAnnealingBtn = document.createElement('button');
+            generalAnnealingBtn.textContent = 'Apply General Annealing';
+            generalAnnealingBtn.onclick = function() {
+                const annealingOptions = document.getElementById('annealingOptions');
+                annealingOptions.style.display = annealingOptions.style.display === 'block' ? 'none' : 'block';
+            };
+            document.querySelector('.controls').appendChild(generalAnnealingBtn);
             
             function addPoint(event) {
                 const rect = canvas.getBoundingClientRect();
@@ -424,13 +445,21 @@ async def read_root():
                     algorithm: algorithm
                 };
                 
-                // Add annealing-specific options if annealing algorithm is selected
-                if (algorithm === 'annealing') {
+                // Add annealing options if any annealing checkboxes are checked or grid-annealing is selected
+                const checkVolume = document.getElementById('checkVolume').checked;
+                const checkAspectRatio = document.getElementById('checkAspectRatio').checked;
+                
+                if (algorithm === 'grid-annealing' || checkVolume || checkAspectRatio) {
                     requestData.annealing_options = {
                         temperature: parseFloat(document.getElementById('temperature').value),
                         cooling_rate: parseFloat(document.getElementById('coolingRate').value),
                         quality_threshold: parseFloat(document.getElementById('qualityThreshold').value),
-                        max_iterations: parseInt(document.getElementById('maxIterations').value)
+                        max_iterations: parseInt(document.getElementById('maxIterations').value),
+                        check_volume: checkVolume,
+                        check_aspect_ratio: checkAspectRatio,
+                        target_aspect_ratio: parseFloat(document.getElementById('targetAspectRatio').value),
+                        volume_weight: parseFloat(document.getElementById('volumeWeight').value),
+                        aspect_ratio_weight: parseFloat(document.getElementById('aspectRatioWeight').value)
                     };
                 }
                 
@@ -576,7 +605,12 @@ async def generate_mesh(request: MeshRequest):
                 "temperature": request.annealing_options.temperature,
                 "cooling_rate": request.annealing_options.cooling_rate,
                 "quality_threshold": request.annealing_options.quality_threshold,
-                "max_iterations": request.annealing_options.max_iterations
+                "max_iterations": request.annealing_options.max_iterations,
+                "check_volume": request.annealing_options.check_volume,
+                "check_aspect_ratio": request.annealing_options.check_aspect_ratio,
+                "target_aspect_ratio": request.annealing_options.target_aspect_ratio,
+                "volume_weight": request.annealing_options.volume_weight,
+                "aspect_ratio_weight": request.annealing_options.aspect_ratio_weight
             }
         
         logger.info(f"MESH_GENERATION - Calling Rust binary with {len(rust_input['geometry']['points'])} points")

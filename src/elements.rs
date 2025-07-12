@@ -100,6 +100,26 @@ impl Triangle {
     pub fn is_properly_oriented(&self, points: &[Point]) -> bool {
         self.jacobian(points) > 0.0
     }
+
+    pub fn aspect_ratio(&self, points: &[Point]) -> f64 {
+        let p1 = &points[self.vertices[0]];
+        let p2 = &points[self.vertices[1]];
+        let p3 = &points[self.vertices[2]];
+
+        let a = p2.distance_to(p3);
+        let b = p1.distance_to(p3);
+        let c = p1.distance_to(p2);
+
+        let longest_edge = a.max(b).max(c);
+        let area = self.area(points);
+        let inradius = area / (0.5 * (a + b + c));
+        
+        longest_edge / (2.0 * inradius)
+    }
+
+    pub fn volume(&self, points: &[Point]) -> f64 {
+        self.area(points)
+    }
 }
 
 #[derive(Debug, Clone)]

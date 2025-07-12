@@ -11,7 +11,7 @@ pub use elements::{Triangle, Edge, Quad};
 pub use mesh::Mesh;
 pub use delaunay::DelaunayTriangulator;
 pub use paving::PavingMeshGenerator;
-pub use annealing::SimulatedAnnealingMeshGenerator;
+pub use annealing::{GridAnnealingMeshGenerator, GeneralAnnealingOptimizer};
 pub use generation::{generate_mesh, export_to_csv};
 
 #[cfg(test)]
