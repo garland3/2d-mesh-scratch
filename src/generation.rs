@@ -75,38 +75,79 @@ fn generate_paving_mesh(request: MeshRequest) -> Result<Mesh, String> {
 }
 
 fn generate_delaunay_mesh(request: MeshRequest) -> Result<Mesh, String> {
-    let mut boundary_points = request.geometry.points;
+    let boundary_points = request.geometry.points;
     
-    if let Some(max_area) = request.max_area {
-        boundary_points = refine_boundary_edges(boundary_points, max_area)?;
-    }
+    // Use hexagonal grid approach for better quality triangulation
+    let points = if let Some(max_area) = request.max_area {
+        let target_edge_length = (4.0 * max_area / (3.0_f64).sqrt()).sqrt();
+        DelaunayTriangulator::generate_hexagonal_grid(&boundary_points, target_edge_length)
+    } else {
+        // Fallback to boundary points only
+        boundary_points.clone()
+    };
     
-    let refined_boundary_count = boundary_points.len();
+    let mut triangulator = DelaunayTriangulator::new(points);
+    let mesh = triangulator.triangulate()?;
     
-    let mut triangulator = DelaunayTriangulator::new(boundary_points);
+    // Filter triangles outside boundary
+    let filtered_mesh = filter_mesh_outside_boundary(mesh, &boundary_points)?;
     
-    for i in 0..refined_boundary_count {
-        triangulator.add_point(i)?;
-    }
-    
-    if let (Some(max_area), Some(min_angle)) = (request.max_area, request.min_angle) {
-        triangulator.refine_interior(max_area, min_angle, refined_boundary_count)?;
-    }
-    
-    triangulator.remove_super_triangle();
-    triangulator.filter_outside_triangles(refined_boundary_count);
-    
-    let vertices: Vec<Point> = triangulator.points[..triangulator.points.len() - 3].to_vec();
-    let mesh = Mesh::new(vertices, triangulator.triangles.clone());
-    
-    if let Err(e) = mesh.validate_jacobians() {
+    if let Err(e) = filtered_mesh.validate_jacobians() {
         return Err(format!("Mesh validation failed: {}", e));
     }
     
-    let (min_jac, max_jac, avg_jac) = mesh.get_jacobian_stats();
+    let (min_jac, max_jac, avg_jac) = filtered_mesh.get_jacobian_stats();
     log::info!("Delaunay mesh Jacobian stats - Min: {:.6}, Max: {:.6}, Avg: {:.6}", min_jac, max_jac, avg_jac);
     
-    Ok(mesh)
+    Ok(filtered_mesh)
+}
+
+fn filter_mesh_outside_boundary(mut mesh: Mesh, boundary: &[Point]) -> Result<Mesh, String> {
+    // Filter triangles whose centroids are outside the boundary
+    let mut filtered_triangles = Vec::new();
+    let mut filtered_indices = Vec::new();
+    
+    for (i, triangle_indices) in mesh.triangle_indices.iter().enumerate() {
+        let p1 = &mesh.vertices[triangle_indices[0]];
+        let p2 = &mesh.vertices[triangle_indices[1]];
+        let p3 = &mesh.vertices[triangle_indices[2]];
+        
+        let centroid = Point::new(
+            (p1.x + p2.x + p3.x) / 3.0,
+            (p1.y + p2.y + p3.y) / 3.0,
+        );
+        
+        if is_point_inside_polygon(&centroid, boundary) {
+            filtered_triangles.push(mesh.triangles[i].clone());
+            filtered_indices.push(*triangle_indices);
+        }
+    }
+    
+    Ok(Mesh {
+        vertices: mesh.vertices,
+        triangles: filtered_triangles,
+        triangle_indices: filtered_indices,
+        quads: None,
+        quad_indices: None,
+    })
+}
+
+fn is_point_inside_polygon(point: &Point, polygon: &[Point]) -> bool {
+    let mut inside = false;
+    let mut j = polygon.len() - 1;
+
+    for i in 0..polygon.len() {
+        let pi = &polygon[i];
+        let pj = &polygon[j];
+        
+        if ((pi.y > point.y) != (pj.y > point.y)) &&
+           (point.x < (pj.x - pi.x) * (point.y - pi.y) / (pj.y - pi.y) + pi.x) {
+            inside = !inside;
+        }
+        j = i;
+    }
+    
+    inside
 }
 
 pub fn export_to_csv(geometry: &Geometry, mesh: Option<&Mesh>) -> Result<String, String> {
