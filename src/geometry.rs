@@ -46,11 +46,20 @@ impl Geometry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AnnealingOptions {
+    pub temperature: Option<f64>,
+    pub cooling_rate: Option<f64>,
+    pub quality_threshold: Option<f64>,
+    pub max_iterations: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MeshRequest {
     pub geometry: Geometry,
     pub max_area: Option<f64>,
     pub min_angle: Option<f64>,
     pub algorithm: Option<String>,
+    pub annealing_options: Option<AnnealingOptions>,
 }
 
 impl MeshRequest {
@@ -60,6 +69,7 @@ impl MeshRequest {
             max_area: Some(0.1),
             min_angle: Some(20.0),
             algorithm: Some("delaunay".to_string()),
+            annealing_options: None,
         }
     }
 
@@ -69,6 +79,7 @@ impl MeshRequest {
             max_area: Some(max_area),
             min_angle: Some(min_angle),
             algorithm: Some("delaunay".to_string()),
+            annealing_options: None,
         }
     }
 }

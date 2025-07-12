@@ -63,11 +63,18 @@ class Geometry(BaseModel):
     points: List[Point]
     name: Optional[str] = "geometry"
 
+class AnnealingOptions(BaseModel):
+    temperature: Optional[float] = 1000.0
+    cooling_rate: Optional[float] = 0.995
+    quality_threshold: Optional[float] = 0.8
+    max_iterations: Optional[int] = 10000
+
 class MeshRequest(BaseModel):
     geometry: Geometry
     max_area: Optional[float] = 0.1
     min_angle: Optional[float] = 20.0
     algorithm: Optional[str] = "delaunay"
+    annealing_options: Optional[AnnealingOptions] = None
 
 # Global storage (in production, use a database)
 geometries = {}
@@ -114,6 +121,15 @@ async def read_root():
             <br>
             Max Area: <input type="number" id="maxArea" value="100" step="10"> (square units)
             Min Angle: <input type="number" id="minAngle" value="20" step="1"> (degrees)
+            <br>
+            <div id="annealingOptions" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ccc; background: #f9f9f9;">
+                <strong>Annealing Options:</strong><br>
+                Initial Temperature: <input type="number" id="temperature" value="1000" step="100" min="1"> 
+                Cooling Rate: <input type="number" id="coolingRate" value="0.995" step="0.001" min="0.001" max="0.999">
+                <br>
+                Quality Threshold: <input type="number" id="qualityThreshold" value="0.8" step="0.1" min="0.1" max="1.0">
+                Max Iterations: <input type="number" id="maxIterations" value="10000" step="1000" min="100">
+            </div>
         </div>
         
         <canvas id="canvas" width="800" height="600"></canvas>
@@ -152,6 +168,16 @@ async def read_root():
             }
             
             canvas.addEventListener('click', addPoint);
+            
+            // Show/hide annealing options based on algorithm selection
+            document.getElementById('meshAlgorithm').addEventListener('change', function() {
+                const annealingOptions = document.getElementById('annealingOptions');
+                if (this.value === 'annealing') {
+                    annealingOptions.style.display = 'block';
+                } else {
+                    annealingOptions.style.display = 'none';
+                }
+            });
             
             function addPoint(event) {
                 const rect = canvas.getBoundingClientRect();
@@ -398,6 +424,16 @@ async def read_root():
                     algorithm: algorithm
                 };
                 
+                // Add annealing-specific options if annealing algorithm is selected
+                if (algorithm === 'annealing') {
+                    requestData.annealing_options = {
+                        temperature: parseFloat(document.getElementById('temperature').value),
+                        cooling_rate: parseFloat(document.getElementById('coolingRate').value),
+                        quality_threshold: parseFloat(document.getElementById('qualityThreshold').value),
+                        max_iterations: parseInt(document.getElementById('maxIterations').value)
+                    };
+                }
+                
                 console.log('Request data:', JSON.stringify(requestData, null, 2));
                 
                 try {
@@ -533,6 +569,15 @@ async def generate_mesh(request: MeshRequest):
             "min_angle": request.min_angle,
             "algorithm": request.algorithm
         }
+        
+        # Add annealing options if provided
+        if request.annealing_options:
+            rust_input["annealing_options"] = {
+                "temperature": request.annealing_options.temperature,
+                "cooling_rate": request.annealing_options.cooling_rate,
+                "quality_threshold": request.annealing_options.quality_threshold,
+                "max_iterations": request.annealing_options.max_iterations
+            }
         
         logger.info(f"MESH_GENERATION - Calling Rust binary with {len(rust_input['geometry']['points'])} points")
         

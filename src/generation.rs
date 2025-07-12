@@ -57,11 +57,29 @@ fn generate_annealing_mesh(request: MeshRequest) -> Result<Mesh, String> {
     let target_area = request.max_area.unwrap_or(100.0);
     let quality_threshold = request.min_angle.unwrap_or(20.0) / 60.0;
     
-    let mut annealing_generator = SimulatedAnnealingMeshGenerator::new(
-        request.geometry.points, 
-        quality_threshold
-    );
-    annealing_generator.generate_mesh(target_area)
+    let max_iterations = request.annealing_options.as_ref()
+        .and_then(|opts| opts.max_iterations)
+        .unwrap_or(10000);
+    
+    let mut annealing_generator = if let Some(ref annealing_options) = request.annealing_options {
+        let temperature = annealing_options.temperature.unwrap_or(1000.0);
+        let cooling_rate = annealing_options.cooling_rate.unwrap_or(0.995);
+        let quality_threshold = annealing_options.quality_threshold.unwrap_or(quality_threshold);
+        
+        SimulatedAnnealingMeshGenerator::with_options(
+            request.geometry.points, 
+            temperature,
+            cooling_rate,
+            quality_threshold
+        )
+    } else {
+        SimulatedAnnealingMeshGenerator::new(
+            request.geometry.points, 
+            quality_threshold
+        )
+    };
+    
+    annealing_generator.generate_mesh_with_iterations(target_area, max_iterations)
 }
 
 fn generate_paving_mesh(request: MeshRequest) -> Result<Mesh, String> {

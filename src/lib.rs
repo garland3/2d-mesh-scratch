@@ -6,7 +6,7 @@ pub mod paving;
 pub mod annealing;
 pub mod generation;
 
-pub use geometry::{Point, Geometry, MeshRequest};
+pub use geometry::{Point, Geometry, MeshRequest, AnnealingOptions};
 pub use elements::{Triangle, Edge, Quad};
 pub use mesh::Mesh;
 pub use delaunay::DelaunayTriangulator;

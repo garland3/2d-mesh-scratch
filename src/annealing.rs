@@ -27,7 +27,28 @@ impl SimulatedAnnealingMeshGenerator {
         }
     }
     
+    pub fn with_options(
+        boundary_points: Vec<Point>, 
+        temperature: f64, 
+        cooling_rate: f64, 
+        quality_threshold: f64
+    ) -> Self {
+        Self {
+            boundary_points,
+            internal_points: Vec::new(),
+            triangles: Vec::new(),
+            rng: rand::thread_rng(),
+            quality_threshold,
+            temperature,
+            cooling_rate,
+        }
+    }
+    
     pub fn generate_mesh(&mut self, target_area: f64) -> Result<Mesh, String> {
+        self.generate_mesh_with_iterations(target_area, 10000)
+    }
+    
+    pub fn generate_mesh_with_iterations(&mut self, target_area: f64, max_iterations: u32) -> Result<Mesh, String> {
         log::info!("ANNEALING - Starting simulated annealing mesh generation");
         
         self.refine_boundary_points(target_area)?;
@@ -39,7 +60,7 @@ impl SimulatedAnnealingMeshGenerator {
         self.create_initial_triangulation()?;
         log::info!("ANNEALING - Created initial triangulation with {} triangles", self.triangles.len());
         
-        self.optimize_with_annealing()?;
+        self.optimize_with_annealing(max_iterations)?;
         log::info!("ANNEALING - Optimization complete");
         
         self.create_final_mesh()
@@ -116,9 +137,8 @@ impl SimulatedAnnealingMeshGenerator {
         Ok(())
     }
     
-    fn optimize_with_annealing(&mut self) -> Result<(), String> {
+    fn optimize_with_annealing(&mut self, max_iterations: u32) -> Result<(), String> {
         let mut iterations = 0;
-        let max_iterations = 10000;
         let mut temperature = self.temperature;
         
         log::info!("ANNEALING - Starting optimization with temperature: {:.2}", temperature);
