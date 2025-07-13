@@ -48,13 +48,31 @@ pub fn generate_mesh(request: MeshRequest) -> Result<Mesh, String> {
         "delaunay" | _ => generate_delaunay_mesh(request.clone())?,
     };
 
-    // Apply general annealing optimization if requested
+    // Apply general annealing optimization if requested (but not for paving algorithm)
     if let Some(ref annealing_options) = request.annealing_options {
-        if annealing_options.check_volume.unwrap_or(false) || 
-           annealing_options.check_aspect_ratio.unwrap_or(false) {
+        if (annealing_options.check_volume.unwrap_or(false) || 
+           annealing_options.check_aspect_ratio.unwrap_or(false) ||
+           annealing_options.check_size_uniformity.unwrap_or(false)) && algorithm != "paving" {
             log::info!("Applying general annealing optimization to {} mesh", algorithm);
             let mut optimizer = GeneralAnnealingOptimizer::from_options(annealing_options);
+            
+            // Set target area from request if not specified in annealing options
+            if annealing_options.target_area.is_none() {
+                optimizer.target_area = request.max_area.unwrap_or(0.1);
+            }
+            
+            // Set min area as a fraction of target area if not specified
+            if annealing_options.min_area.is_none() {
+                optimizer.min_area = optimizer.target_area * 0.1;
+            }
+            
+            // Set boundary points to constrain optimization
+            optimizer.set_boundary(request.geometry.points.clone());
+            log::info!("Set boundary constraint with {} points", request.geometry.points.len());
+            
             optimizer.optimize_mesh(&mut mesh)?;
+        } else if algorithm == "paving" {
+            log::info!("Skipping general annealing for paving algorithm (has built-in quality control)");
         }
     }
 

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Finite Element Mesher (Advanced)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/delaunator@5.0.0/delaunator.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .canvas-container {
+            aspect-ratio: 1 / 1;
+            max-height: 80vh;
+        }
+        .control-group {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">2D Finite Element Mesher</h1>
+            <p class="text-md text-gray-600 mt-2">Define geometry, generate a mesh, refine it, and download the result.</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Left Column: Canvas -->
+            <div class="flex-grow lg:w-2/3">
+                <div class="bg-white rounded-lg shadow-lg p-4">
+                    <div class="canvas-container relative">
+                        <canvas id="mainCanvas" class="w-full h-full bg-gray-50 rounded-md border-2 border-gray-200 cursor-crosshair"></canvas>
+                        <div id="canvas-overlay" class="absolute top-0 left-0 w-full h-full pointer-events-none flex items-center justify-center">
+                            <p id="canvas-placeholder" class="text-gray-400 text-lg">Click to start defining a polygon</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Controls -->
+            <div class="flex-shrink-0 lg:w-1/3">
+                <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+                    <!-- Geometry -->
+                    <div>
+                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">1. Geometry</h2>
+                        <div class="space-y-3">
+                            <p class="text-sm text-gray-600">Click on the canvas to add vertices. The polygon will close automatically.</p>
+                            <button id="clear-geometry-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-red-300">Clear Geometry</button>
+                        </div>
+                    </div>
+
+                    <!-- Meshing -->
+                    <div>
+                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">2. Meshing</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label for="mesh-density" class="text-sm font-medium text-gray-700">Mesh Density:</label>
+                                <select id="mesh-density" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                    <option value="50">Coarse</option>
+                                    <option value="35" selected>Medium</option>
+                                    <option value="25">Fine</option>
+                                    <option value="15">Very Fine</option>
+                                </select>
+                            </div>
+                            <button id="generate-mesh-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-blue-300">Generate Mesh</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Post-Processing -->
+                    <div>
+                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">3. Post-Processing</h2>
+                        <div class="space-y-4">
+                             <div class="control-group">
+                                <label class="text-sm font-medium text-gray-700">Metric:</label>
+                                <div class="flex items-center space-x-4 mt-2">
+                                    <label class="flex items-center"><input type="radio" name="refine-metric" value="angle" checked class="form-radio h-4 w-4 text-indigo-600"> <span class="ml-2">Min Angle</span></label>
+                                    <label class="flex items-center"><input type="radio" name="refine-metric" value="aspect" class="form-radio h-4 w-4 text-indigo-600"> <span class="ml-2">Aspect Ratio</span></label>
+                                </div>
+                            </div>
+                            <div id="angle-control" class="flex items-center justify-between">
+                                <label for="min-angle" class="text-sm font-medium text-gray-700">Min Angle (°):</label>
+                                <input type="number" id="min-angle" value="25" min="1" max="59" class="w-24 text-center rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div id="aspect-control" class="hidden flex items-center justify-between">
+                                <label for="max-aspect" class="text-sm font-medium text-gray-700">Max Aspect Ratio:</label>
+                                <input type="number" id="max-aspect" value="1.5" step="0.1" min="1.1" class="w-24 text-center rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button id="refine-mesh-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-green-300">Refine</button>
+                                <button id="smooth-mesh-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-purple-300">Smooth</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Status</h2>
+                        <div class="space-y-2">
+                            <div id="quality-display" class="text-center text-sm bg-gray-100 p-2 rounded-md h-8"></div>
+                            <progress id="progress-bar" value="0" max="100" class="w-full [&::-webkit-progress-bar]:rounded-lg [&::-webkit-progress-value]:rounded-lg   [&::-webkit-progress-bar]:bg-slate-300 [&::-webkit-progress-value]:bg-violet-400 [&::-moz-progress-bar]:bg-violet-400"></progress>
+                            <p id="status-text" class="text-sm text-center text-gray-600 h-5">Ready.</p>
+                        </div>
+                    </div>
+
+                    <!-- Download -->
+                    <div>
+                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">4. Export</h2>
+                        <button id="download-btn" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-400">Download Mesh (JSON)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const canvas = document.getElementById('mainCanvas'), ctx = canvas.getContext('2d');
+        const canvasPlaceholder = document.getElementById('canvas-placeholder');
+        const clearGeometryBtn = document.getElementById('clear-geometry-btn');
+        const generateMeshBtn = document.getElementById('generate-mesh-btn');
+        const refineMeshBtn = document.getElementById('refine-mesh-btn');
+        const smoothMeshBtn = document.getElementById('smooth-mesh-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const meshDensitySelect = document.getElementById('mesh-density');
+        const minAngleInput = document.getElementById('min-angle');
+        const maxAspectInput = document.getElementById('max-aspect');
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const qualityDisplay = document.getElementById('quality-display');
+        const angleControl = document.getElementById('angle-control'), aspectControl = document.getElementById('aspect-control');
+        const metricRadios = document.querySelectorAll('input[name="refine-metric"]');
+
+        // --- State Variables ---
+        let polygon = [], points = [], boundaryPoints = new Set(), triangles = [], isMeshGenerated = false;
+
+        // --- Utility Functions ---
+        const getCanvasPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
+            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+        };
+        
+        const updateButtonStates = () => {
+            const hasPolygon = polygon.length > 2;
+            generateMeshBtn.disabled = !hasPolygon;
+            refineMeshBtn.disabled = !isMeshGenerated;
+            smoothMeshBtn.disabled = !isMeshGenerated;
+            downloadBtn.disabled = !isMeshGenerated;
+            clearGeometryBtn.disabled = polygon.length === 0 && !isMeshGenerated;
+        };
+        
+        const setStatus = (text, progress = -1) => {
+            statusText.textContent = text;
+            if (progress !== -1) progressBar.value = progress;
+        };
+
+        // --- Drawing Functions ---
+        const resizeCanvas = () => {
+            const container = canvas.parentElement;
+            const size = Math.min(container.clientWidth, container.clientHeight);
+            canvas.width = size; canvas.height = size;
+            draw();
+        };
+
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Draw mesh triangles if they exist
+            if (triangles.length > 0) {
+                ctx.strokeStyle = 'rgba(0, 100, 255, 0.5)'; ctx.lineWidth = 1;
+                for (let i = 0; i < triangles.length; i += 3) {
+                    const p1 = points[triangles[i]], p2 = points[triangles[i+1]], p3 = points[triangles[i+2]];
+                    if (!p1 || !p2 || !p3) continue;
+                    ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.lineTo(p3[0], p3[1]); ctx.closePath(); ctx.stroke();
+                }
+            }
+            // Draw polygon outline
+            if (polygon.length > 1) {
+                ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(polygon[0][0], polygon[0][1]);
+                for (let i = 1; i < polygon.length; i++) ctx.lineTo(polygon[i][0], polygon[i][1]);
+                ctx.closePath(); ctx.stroke();
+            }
+            // Draw polygon vertices
+            ctx.fillStyle = '#dc2626';
+            for (const p of polygon) { 
+                ctx.beginPath(); 
+                ctx.arc(p[0], p[1], 4, 0, 2 * Math.PI); 
+                ctx.fill(); 
+            }
+        };
+
+        // --- Core Meshing Logic ---
+        const isPointInPolygon = (point, vs) => {
+            const x = point[0], y = point[1]; let inside = false;
+            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                const xi = vs[i][0], yi = vs[i][1]; const xj = vs[j][0], yj = vs[j][1];
+                const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        };
+        
+        const getTriangleCenter = (p1, p2, p3) => [(p1[0] + p2[0] + p3[0]) / 3, (p1[1] + p2[1] + p3[1]) / 3];
+
+        const getTriangleQuality = (p1, p2, p3, metric) => {
+            const a = Math.hypot(p2[0] - p3[0], p2[1] - p3[1]), b = Math.hypot(p1[0] - p3[0], p1[1] - p3[1]), c = Math.hypot(p1[0] - p2[0], p1[1] - p2[1]);
+            if (metric === 'angle') {
+                const b2c2_a2 = b * b + c * c - a * a;
+                const a2c2_b2 = a * a + c * c - b * b;
+                const a2b2_c2 = a * a + b * b - c * c;
+                if (2*b*c === 0 || 2*a*c === 0 || 2*a*b === 0) return 0;
+                const angleA = Math.acos(Math.max(-1, Math.min(1, b2c2_a2 / (2 * b * c))));
+                const angleB = Math.acos(Math.max(-1, Math.min(1, a2c2_b2 / (2 * a * c))));
+                const angleC = Math.acos(Math.max(-1, Math.min(1, a2b2_c2 / (2 * a * b))));
+                return Math.min(angleA, angleB, angleC) * (180 / Math.PI); // Return min angle in degrees
+            } else { // Aspect Ratio
+                const s = (a + b + c) / 2;
+                const area = Math.sqrt(Math.max(0, s * (s - a) * (s - b) * (s - c)));
+                if (area < 1e-9) return Infinity;
+                const circumradius = (a * b * c) / (4 * area);
+                const inradius = area / s;
+                if (inradius < 1e-9) return Infinity;
+                return circumradius / (2 * inradius);
+            }
+        };
+
+        const getAverageMeshQuality = () => {
+            if (triangles.length === 0) return { avg: 0, worst: 0, metric: '' };
+            const metric = document.querySelector('input[name="refine-metric"]:checked').value;
+            let totalQuality = 0, worstQuality = (metric === 'angle' ? 180 : 0);
+            
+            for (let i = 0; i < triangles.length; i += 3) {
+                const p1 = points[triangles[i]], p2 = points[triangles[i+1]], p3 = points[triangles[i+2]];
+                if (!p1 || !p2 || !p3) continue;
+                const quality = getTriangleQuality(p1, p2, p3, metric);
+                totalQuality += quality;
+                if (metric === 'angle') worstQuality = Math.min(worstQuality, quality);
+                else worstQuality = Math.max(worstQuality, quality);
+            }
+            return { avg: totalQuality / (triangles.length / 3), worst: worstQuality, metric };
+        };
+
+        const updateQualityDisplay = () => {
+            if (!isMeshGenerated) { qualityDisplay.textContent = ''; return; }
+            const { avg, metric } = getAverageMeshQuality();
+            const label = metric === 'angle' ? 'Avg. Min Angle' : 'Avg. Aspect Ratio';
+            const unit = metric === 'angle' ? '°' : '';
+            qualityDisplay.textContent = `${label}: ${avg.toFixed(2)}${unit}`;
+        };
+
+        const generateMeshInternal = (nodePoints) => {
+            const delaunay = Delaunator.from(nodePoints);
+            const allTriangles = delaunay.triangles;
+            const validTriangles = [];
+            for (let i = 0; i < allTriangles.length; i += 3) {
+                const p1 = nodePoints[allTriangles[i]], p2 = nodePoints[allTriangles[i+1]], p3 = nodePoints[allTriangles[i+2]];
+                if (!p1 || !p2 || !p3) continue;
+                const center = getTriangleCenter(p1, p2, p3);
+                if (isPointInPolygon(center, polygon)) {
+                    validTriangles.push(allTriangles[i], allTriangles[i+1], allTriangles[i+2]);
+                }
+            }
+            return validTriangles;
+        };
+
+        const handleGenerateMesh = async () => {
+            if (polygon.length < 3) return;
+            setStatus('Generating initial mesh...', 10);
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            const density = parseFloat(meshDensitySelect.value);
+            points = [...polygon];
+            boundaryPoints.clear();
+            for(let i=0; i<polygon.length; ++i) boundaryPoints.add(i);
+            
+            for (let i = 0; i < polygon.length; i++) {
+                const p1 = polygon[i], p2 = polygon[(i + 1) % polygon.length];
+                const dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+                const edgeLength = Math.hypot(dx, dy);
+                const numSegments = Math.ceil(edgeLength / density);
+                if (numSegments > 1) {
+                    for (let j = 1; j < numSegments; j++) {
+                        boundaryPoints.add(points.length);
+                        points.push([p1[0] + (j / numSegments) * dx, p1[1] + (j / numSegments) * dy]);
+                    }
+                }
+            }
+            setStatus('Generating initial mesh... (2/4)', 25);
+
+            const bbox = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+            polygon.forEach(p => { bbox.minX = Math.min(bbox.minX, p[0]); bbox.minY = Math.min(bbox.minY, p[1]); bbox.maxX = Math.max(bbox.maxX, p[0]); bbox.maxY = Math.max(bbox.maxY, p[1]); });
+            for (let x = bbox.minX; x < bbox.maxX; x += density) {
+                for (let y = bbox.minY; y < bbox.maxY; y += density) {
+                    if (isPointInPolygon([x, y], polygon)) points.push([x, y]);
+                }
+            }
+            setStatus('Generating initial mesh... (3/4)', 50);
+            
+            triangles = generateMeshInternal(points);
+            setStatus('Initial mesh generated.', 100);
+            isMeshGenerated = true;
+            
+            draw();
+            updateButtonStates();
+            updateQualityDisplay();
+        };
+        
+        const handleRefineMesh = async () => {
+            if (!isMeshGenerated) return;
+            
+            const metric = document.querySelector('input[name="refine-metric"]:checked').value;
+            const minAngleValue = parseFloat(minAngleInput.value);
+            const maxAspectRatio = parseFloat(maxAspectInput.value);
+            const maxIterations = 10;
+            let pointsAddedTotal = 0;
+
+            let lastBestQuality = getAverageMeshQuality();
+
+            for (let iter = 0; iter < maxIterations; iter++) {
+                setStatus(`Refining mesh: Iteration ${iter + 1}`, (iter / maxIterations) * 100);
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                let worstTriangle = null, worstQuality = (metric === 'angle' ? 180 : 0);
+                
+                for (let i = 0; i < triangles.length; i += 3) {
+                    const p1 = points[triangles[i]], p2 = points[triangles[i+1]], p3 = points[triangles[i+2]];
+                    if (!p1 || !p2 || !p3) continue;
+                    const quality = getTriangleQuality(p1, p2, p3, metric);
+                    if ((metric === 'angle' && quality < worstQuality) || (metric === 'aspect' && quality > worstQuality)) {
+                        worstQuality = quality;
+                        worstTriangle = { p1, p2, p3 };
+                    }
+                }
+
+                const isBad = (metric === 'angle' && worstQuality < minAngleValue) || (metric === 'aspect' && worstQuality > maxAspectRatio);
+                if (!isBad || !worstTriangle) {
+                    setStatus(`Refinement complete. No more bad triangles found.`, 100);
+                    break;
+                }
+                
+                const { p1, p2, p3 } = worstTriangle;
+                const D = 2 * (p1[0] * (p2[1] - p3[1]) + p2[0] * (p3[1] - p1[1]) + p3[0] * (p1[1] - p2[1]));
+                if (Math.abs(D) < 1e-9) continue;
+                const Ux = ((p1[0]**2 + p1[1]**2) * (p2[1] - p3[1]) + (p2[0]**2 + p2[1]**2) * (p3[1] - p1[1]) + (p3[0]**2 + p3[1]**2) * (p1[1] - p2[1])) / D;
+                const Uy = ((p1[0]**2 + p1[1]**2) * (p3[0] - p2[0]) + (p2[0]**2 + p2[1]**2) * (p1[0] - p3[0]) + (p3[0]**2 + p3[1]**2) * (p2[0] - p1[0])) / D;
+                const newPoint = [Ux, Uy];
+                
+                const tempPoints = [...points, newPoint];
+                const tempTriangles = generateMeshInternal(tempPoints);
+                
+                // Check if quality improved
+                const currentTriangles = triangles; // Save old state
+                triangles = tempTriangles;
+                const newQuality = getAverageMeshQuality();
+                const didImprove = (metric === 'angle' && newQuality.avg > lastBestQuality.avg) || (metric === 'aspect' && newQuality.avg < lastBestQuality.avg);
+
+                if (didImprove) {
+                    points = tempPoints;
+                    lastBestQuality = newQuality;
+                    pointsAddedTotal++;
+                } else {
+                    triangles = currentTriangles; // Revert
+                    setStatus(`Refinement stopped. No quality improvement.`, 100);
+                    break;
+                }
+
+                if (iter === maxIterations - 1) setStatus(`Max refinement iterations reached.`, 100);
+            }
+            draw();
+            updateButtonStates();
+            updateQualityDisplay();
+        };
+
+        const handleSmoothMesh = async () => {
+            if (!isMeshGenerated) return;
+            setStatus('Smoothing mesh...', 10);
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            const initialQuality = getAverageMeshQuality();
+            const metric = initialQuality.metric;
+            const newPoints = JSON.parse(JSON.stringify(points)); // Deep copy
+            const nodeNeighbors = Array.from({ length: points.length }, () => new Set());
+
+            for (let i = 0; i < triangles.length; i += 3) {
+                const t = [triangles[i], triangles[i+1], triangles[i+2]];
+                for(let j=0; j<3; ++j) {
+                    nodeNeighbors[t[j]].add(t[(j+1)%3]);
+                    nodeNeighbors[t[j]].add(t[(j+2)%3]);
+                }
+            }
+            setStatus('Smoothing mesh... (2/3)', 40);
+
+            let nodesMoved = 0;
+            for (let i = 0; i < newPoints.length; i++) {
+                if (boundaryPoints.has(i)) continue; // Don't move boundary nodes
+                
+                const neighbors = Array.from(nodeNeighbors[i]);
+                if (neighbors.length === 0) continue;
+
+                let avgX = 0, avgY = 0;
+                for (const neighborIdx of neighbors) {
+                    avgX += points[neighborIdx][0];
+                    avgY += points[neighborIdx][1];
+                }
+                newPoints[i] = [avgX / neighbors.length, avgY / neighbors.length];
+                nodesMoved++;
+            }
+            setStatus('Smoothing mesh... (3/3)', 80);
+
+            const tempTriangles = generateMeshInternal(newPoints);
+            const originalTriangles = triangles;
+            triangles = tempTriangles;
+            const newQuality = getAverageMeshQuality();
+            
+            const didImprove = (metric === 'angle' && newQuality.avg > initialQuality.avg) || (metric === 'aspect' && newQuality.avg < initialQuality.avg);
+
+            if (didImprove) {
+                points = newPoints;
+                setStatus(`Smoothing complete. Moved ${nodesMoved} nodes.`, 100);
+            } else {
+                triangles = originalTriangles; // Revert
+                setStatus('Smoothing did not improve quality. Reverted.', 100);
+            }
+            
+            draw();
+            updateQualityDisplay();
+        };
+
+        // --- Event Handlers ---
+        const handleCanvasClick = (e) => {
+            if (isMeshGenerated) { 
+                setStatus("Clear geometry to define a new shape."); 
+                return; 
+            }
+            // FIX: Store point as an array [x, y] instead of an object {x, y}
+            const pos = getCanvasPos(e);
+            polygon.push([pos.x, pos.y]);
+            
+            canvasPlaceholder.style.display = 'none';
+            draw(); 
+            updateButtonStates();
+        };
+
+        const handleClear = () => {
+            polygon = []; points = []; triangles = [];
+            isMeshGenerated = false;
+            boundaryPoints.clear();
+            canvasPlaceholder.style.display = 'flex';
+            setStatus('Ready.', 0);
+            qualityDisplay.textContent = '';
+            draw(); updateButtonStates();
+        };
+
+        const handleDownload = () => {
+            if (!isMeshGenerated) return;
+            const meshData = { points: points, elements: [] };
+            for (let i = 0; i < triangles.length; i += 3) {
+                meshData.elements.push([triangles[i], triangles[i+1], triangles[i+2]]);
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(meshData, null, 2));
+            const a = document.createElement('a');
+            a.setAttribute("href", dataStr); a.setAttribute("download", "mesh.json");
+            document.body.appendChild(a); a.click(); a.remove();
+            setStatus("Mesh downloaded.", 100);
+        };
+        
+        const handleMetricChange = () => {
+            const metric = document.querySelector('input[name="refine-metric"]:checked').value;
+            angleControl.classList.toggle('hidden', metric !== 'angle');
+            aspectControl.classList.toggle('hidden', metric !== 'aspect');
+            updateQualityDisplay();
+        };
+
+        // --- Initialization ---
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('click', handleCanvasClick);
+        clearGeometryBtn.addEventListener('click', handleClear);
+        generateMeshBtn.addEventListener('click', handleGenerateMesh);
+        refineMeshBtn.addEventListener('click', handleRefineMesh);
+        smoothMeshBtn.addEventListener('click', handleSmoothMesh);
+        downloadBtn.addEventListener('click', handleDownload);
+        metricRadios.forEach(radio => radio.addEventListener('change', handleMetricChange));
+
+        resizeCanvas();
+        updateButtonStates();
+    </script>
+</body>
+</html>

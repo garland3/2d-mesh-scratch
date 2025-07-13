@@ -72,7 +72,11 @@ class AnnealingOptions(BaseModel):
     check_aspect_ratio: Optional[bool] = True
     target_aspect_ratio: Optional[float] = 1.73
     volume_weight: Optional[float] = 0.3
-    aspect_ratio_weight: Optional[float] = 0.7
+    aspect_ratio_weight: Optional[float] = 0.4
+    check_size_uniformity: Optional[bool] = True
+    size_uniformity_weight: Optional[float] = 0.3
+    target_area: Optional[float] = None
+    min_area: Optional[float] = None
 
 class MeshRequest(BaseModel):
     geometry: Geometry
@@ -99,59 +103,357 @@ async def read_root():
     <head>
         <title>2D Geometry & FEA Mesh Generator</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            #canvas { border: 1px solid #ccc; cursor: crosshair; margin: 30px; }
-            .controls { margin: 20px 0; }
-            button { margin: 5px; padding: 10px 20px; }
-            input { margin: 5px; padding: 5px; }
-            .point-list { margin: 20px 0; }
-            .point-item { margin: 5px 0; padding: 5px; background: #f0f0f0; }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #333;
+                min-height: 100vh;
+                padding: 20px;
+            }
+            
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                background: rgba(255, 255, 255, 0.95);
+                border-radius: 15px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                padding: 30px;
+                backdrop-filter: blur(10px);
+            }
+            
+            h1 {
+                text-align: center;
+                color: #4a5568;
+                margin-bottom: 30px;
+                font-size: 2.5em;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            
+            .main-content {
+                display: grid;
+                grid-template-columns: 1fr 350px;
+                gap: 30px;
+                align-items: start;
+            }
+            
+            .canvas-section {
+                background: white;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            }
+            
+            #canvas { 
+                border: 2px solid #e2e8f0;
+                border-radius: 8px;
+                cursor: crosshair;
+                display: block;
+                margin: 0 auto;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            }
+            
+            .sidebar {
+                background: white;
+                border-radius: 12px;
+                padding: 25px;
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+            
+            .controls {
+                margin-bottom: 25px;
+            }
+            
+            .control-group {
+                margin-bottom: 20px;
+                padding: 15px;
+                background: #f8fafc;
+                border-radius: 8px;
+                border-left: 4px solid #667eea;
+            }
+            
+            .control-group h3 {
+                margin-bottom: 15px;
+                color: #4a5568;
+                font-size: 1.1em;
+            }
+            
+            button { 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 12px 20px;
+                margin: 5px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            }
+            
+            button:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+            }
+            
+            button:active {
+                transform: translateY(0);
+            }
+            
+            .clear-btn {
+                background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+                box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+            }
+            
+            .clear-btn:hover {
+                box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+            }
+            
+            input, select { 
+                padding: 10px;
+                margin: 5px 0;
+                border: 2px solid #e2e8f0;
+                border-radius: 6px;
+                width: 100%;
+                font-size: 14px;
+                transition: border-color 0.3s ease;
+            }
+            
+            input:focus, select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+            
+            .input-row {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+            
+            .input-row label {
+                min-width: 80px;
+                font-weight: 600;
+                color: #4a5568;
+            }
+            
+            .point-list {
+                background: #f8fafc;
+                border-radius: 8px;
+                padding: 15px;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            
+            .point-list h3 {
+                margin-bottom: 15px;
+                color: #4a5568;
+            }
+            
+            .point-item { 
+                margin: 8px 0;
+                padding: 12px;
+                background: white;
+                border-radius: 6px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .point-item button {
+                background: #e53e3e;
+                padding: 6px 12px;
+                margin: 0;
+                font-size: 12px;
+            }
+            
+            .annealing-options {
+                background: #edf2f7;
+                border: 2px solid #cbd5e0;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 15px 0;
+            }
+            
+            .annealing-options h4 {
+                color: #2d3748;
+                margin-bottom: 15px;
+                font-size: 1.1em;
+            }
+            
+            .checkbox-group {
+                display: flex;
+                align-items: center;
+                margin: 10px 0;
+                gap: 8px;
+            }
+            
+            .checkbox-group input[type="checkbox"] {
+                width: auto;
+                margin: 0;
+            }
+            
+            .checkbox-group label {
+                margin: 0;
+                font-weight: 500;
+            }
+            
+            #meshInfo {
+                background: #f0fff4;
+                border: 2px solid #9ae6b4;
+                border-radius: 8px;
+                padding: 15px;
+                margin-top: 20px;
+            }
+            
+            #meshInfo h3 {
+                color: #22543d;
+                margin-bottom: 10px;
+            }
+            
+            #meshInfo p {
+                margin: 5px 0;
+                color: #2f855a;
+                font-weight: 600;
+            }
+            
+            .toggle-btn {
+                background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+                box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+            }
+            
+            .toggle-btn:hover {
+                box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+            }
         </style>
     </head>
     <body>
-        <h1>2D Geometry & FEA Mesh Generator</h1>
-        
-        <div class="controls">
-            <button onclick="clearPoints()">Clear Points</button>
-            <button onclick="generateMesh()">Generate Mesh</button>
-            <button onclick="clearMesh()">Clear Mesh</button>
-            <button onclick="exportCSV()">Export to CSV</button>
-            <br>
-            Algorithm: 
-            <select id="meshAlgorithm">
-                <option value="delaunay">Delaunay Triangulation</option>
-                <option value="paving">Paving (Quad-dominant)</option>
-                <option value="grid-annealing">Grid Annealing</option>
-            </select>
-            <br>
-            Max Area: <input type="number" id="maxArea" value="100" step="10"> (square units)
-            Min Angle: <input type="number" id="minAngle" value="20" step="1"> (degrees)
-            <br>
-            <div id="annealingOptions" style="display: none; margin-top: 10px; padding: 10px; border: 1px solid #ccc; background: #f9f9f9;">
-                <strong>General Annealing Options:</strong><br>
-                <input type="checkbox" id="checkVolume" checked> Check Volume Uniformity
-                <input type="checkbox" id="checkAspectRatio" checked> Check Aspect Ratio
-                <br>
-                Initial Temperature: <input type="number" id="temperature" value="1000" step="100" min="1"> 
-                Cooling Rate: <input type="number" id="coolingRate" value="0.995" step="0.001" min="0.001" max="0.999">
-                <br>
-                Quality Threshold: <input type="number" id="qualityThreshold" value="0.8" step="0.1" min="0.1" max="1.0">
-                Max Iterations: <input type="number" id="maxIterations" value="10000" step="1000" min="100">
-                <br>
-                Target Aspect Ratio: <input type="number" id="targetAspectRatio" value="1.73" step="0.1" min="1.0" max="10.0">
-                Volume Weight: <input type="number" id="volumeWeight" value="0.3" step="0.1" min="0.0" max="1.0">
-                Aspect Ratio Weight: <input type="number" id="aspectRatioWeight" value="0.7" step="0.1" min="0.0" max="1.0">
+        <div class="container">
+            <h1>2D Geometry & FEA Mesh Generator</h1>
+            
+            <div class="main-content">
+                <div class="canvas-section">
+                    <canvas id="canvas" width="800" height="600"></canvas>
+                    <div id="meshInfo"></div>
+                </div>
+                
+                <div class="sidebar">
+                    <div class="controls">
+                        <div class="control-group">
+                            <h3>Actions</h3>
+                            <button class="clear-btn" onclick="clearPoints()">Clear Points</button>
+                            <button onclick="generateMesh()">Generate Mesh</button>
+                            <button class="clear-btn" onclick="clearMesh()">Clear Mesh</button>
+                            <button class="toggle-btn" onclick="exportCSV()">Export to CSV</button>
+                            <button onclick="resetZoom()">Reset Zoom</button>
+                        </div>
+                        
+                        <div class="control-group">
+                            <h3>View</h3>
+                            <div class="input-row">
+                                <label>Zoom:</label>
+                                <span id="zoomLevel">100%</span>
+                            </div>
+                            <small style="color: #666;">Use mouse wheel to zoom in/out</small>
+                        </div>
+                        
+                        <div class="control-group">
+                            <h3>Mesh Settings</h3>
+                            <div class="input-row">
+                                <label>Algorithm:</label>
+                                <select id="meshAlgorithm">
+                                    <option value="delaunay">Delaunay Triangulation</option>
+                                    <option value="paving">Paving (Quad-dominant)</option>
+                                    <option value="grid-annealing">Grid Annealing</option>
+                                </select>
+                            </div>
+                            <div class="input-row">
+                                <label>Max Area:</label>
+                                <input type="number" id="maxArea" value="100" step="10" title="Maximum triangle area in square units">
+                            </div>
+                            <div class="input-row">
+                                <label>Min Angle:</label>
+                                <input type="number" id="minAngle" value="20" step="1" title="Minimum triangle angle in degrees">
+                            </div>
+                        </div>
+                        
+                        <div class="control-group">
+                            <h3>Annealing Options</h3>
+                            <div class="annealing-options">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="enableAnnealing" checked>
+                                    <label for="enableAnnealing">Enable Annealing (recommended)</label>
+                                </div>
+                                <div style="margin: 10px 0; padding: 8px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; font-size: 12px; color: #856404;">
+                                    <strong>Note:</strong> Annealing options apply to Delaunay and Grid-Annealing algorithms only. Paving algorithm has built-in quality control.
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="checkVolume" checked>
+                                    <label for="checkVolume">Check Volume Uniformity</label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="checkAspectRatio" checked>
+                                    <label for="checkAspectRatio">Check Aspect Ratio</label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="checkSizeUniformity" checked>
+                                    <label for="checkSizeUniformity">Check Size Uniformity</label>
+                                </div>
+                                <div class="input-row">
+                                    <label>Temperature:</label>
+                                    <input type="number" id="temperature" value="1000" step="100" min="1">
+                                </div>
+                                <div class="input-row">
+                                    <label>Cooling Rate:</label>
+                                    <input type="number" id="coolingRate" value="0.995" step="0.001" min="0.001" max="0.999">
+                                </div>
+                                <div class="input-row">
+                                    <label>Quality:</label>
+                                    <input type="number" id="qualityThreshold" value="0.8" step="0.1" min="0.1" max="1.0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Max Iter:</label>
+                                    <input type="number" id="maxIterations" value="10000" step="1000" min="100">
+                                </div>
+                                <div class="input-row">
+                                    <label>Target AR:</label>
+                                    <input type="number" id="targetAspectRatio" value="1.73" step="0.1" min="1.0" max="10.0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Vol Weight:</label>
+                                    <input type="number" id="volumeWeight" value="0.3" step="0.1" min="0.0" max="1.0">
+                                </div>
+                                <div class="input-row">
+                                    <label>AR Weight:</label>
+                                    <input type="number" id="aspectRatioWeight" value="0.4" step="0.1" min="0.0" max="1.0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Size Weight:</label>
+                                    <input type="number" id="sizeUniformityWeight" value="0.3" step="0.1" min="0.0" max="1.0">
+                                </div>
+                                <div class="input-row">
+                                    <label>Min Area:</label>
+                                    <input type="number" id="minArea" value="10" step="5" min="1" title="Minimum triangle area">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="point-list">
+                        <h3>Points</h3>
+                        <div id="pointsList"></div>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <canvas id="canvas" width="800" height="600"></canvas>
-        
-        <div class="point-list">
-            <h3>Points:</h3>
-            <div id="pointsList"></div>
-        </div>
-        
-        <div id="meshInfo"></div>
         
         <script>
             const canvas = document.getElementById('canvas');
@@ -159,46 +461,114 @@ async def read_root():
             let points = [];
             let mesh = null;
             
+            // Zoom and pan variables
+            let zoom = 1.0;
+            let panX = 0;
+            let panY = 0;
+            const minZoom = 0.1;
+            const maxZoom = 10.0;
+            
             // Coordinate system: 1 unit = 1 pixel, but with origin at bottom-left
             // Canvas is 800x600, so world coordinates go from (0,0) to (800,600)
             // This makes the max area setting meaningful (e.g., 100 = 10x10 pixel triangle)
             
-            // Convert canvas coordinates to world coordinates
+            // Convert canvas coordinates to world coordinates (accounting for zoom and pan)
             function canvasToWorld(canvasX, canvasY) {
-                return {
-                    x: canvasX,
-                    y: canvas.height - canvasY  // Flip Y axis
-                };
+                const worldX = (canvasX - panX) / zoom;
+                const worldY = canvas.height - (canvasY - panY) / zoom;
+                return { x: worldX, y: worldY };
             }
             
-            // Convert world coordinates to canvas coordinates
+            // Convert world coordinates to canvas coordinates (accounting for zoom and pan)
             function worldToCanvas(worldX, worldY) {
-                return {
-                    x: worldX,
-                    y: canvas.height - worldY  // Flip Y axis
-                };
+                const canvasX = worldX * zoom + panX;
+                const canvasY = (canvas.height - worldY) * zoom + panY;
+                return { x: canvasX, y: canvasY };
             }
             
             canvas.addEventListener('click', addPoint);
+            canvas.addEventListener('wheel', handleWheel);
             
-            // Show annealing options for grid-annealing
+            // Handle algorithm selection to show/hide annealing options
             document.getElementById('meshAlgorithm').addEventListener('change', function() {
-                const annealingOptions = document.getElementById('annealingOptions');
-                if (this.value === 'grid-annealing') {
-                    annealingOptions.style.display = 'block';
+                const annealingSection = document.querySelector('.annealing-options');
+                const enableAnnealingCheckbox = document.getElementById('enableAnnealing');
+                
+                if (this.value === 'paving') {
+                    // Disable annealing for paving algorithm
+                    annealingSection.style.opacity = '0.5';
+                    enableAnnealingCheckbox.checked = false;
+                    enableAnnealingCheckbox.disabled = true;
+                    
+                    // Disable all annealing controls
+                    const annealingInputs = annealingSection.querySelectorAll('input, select');
+                    annealingInputs.forEach(input => {
+                        if (input.id !== 'enableAnnealing') {
+                            input.disabled = true;
+                        }
+                    });
                 } else {
-                    annealingOptions.style.display = 'none';
+                    // Enable annealing for other algorithms
+                    annealingSection.style.opacity = '1';
+                    enableAnnealingCheckbox.disabled = false;
+                    enableAnnealingCheckbox.checked = true;
+                    
+                    // Enable all annealing controls
+                    const annealingInputs = annealingSection.querySelectorAll('input, select');
+                    annealingInputs.forEach(input => {
+                        input.disabled = false;
+                    });
                 }
             });
             
-            // Add button to show general annealing options for any algorithm
-            const generalAnnealingBtn = document.createElement('button');
-            generalAnnealingBtn.textContent = 'Apply General Annealing';
-            generalAnnealingBtn.onclick = function() {
-                const annealingOptions = document.getElementById('annealingOptions');
-                annealingOptions.style.display = annealingOptions.style.display === 'block' ? 'none' : 'block';
-            };
-            document.querySelector('.controls').appendChild(generalAnnealingBtn);
+            // Handle mouse wheel for zooming
+            function handleWheel(event) {
+                event.preventDefault();
+                
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+                
+                // Get the world coordinates of the mouse position before zoom
+                const worldCoordsBefore = canvasToWorld(mouseX, mouseY);
+                
+                // Apply zoom
+                const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+                const newZoom = Math.max(minZoom, Math.min(maxZoom, zoom * zoomFactor));
+                
+                if (newZoom !== zoom) {
+                    zoom = newZoom;
+                    
+                    // Get the world coordinates of the mouse position after zoom
+                    const worldCoordsAfter = canvasToWorld(mouseX, mouseY);
+                    
+                    // Adjust pan to keep the mouse position fixed in world coordinates
+                    const deltaX = (worldCoordsAfter.x - worldCoordsBefore.x) * zoom;
+                    const deltaY = (worldCoordsAfter.y - worldCoordsBefore.y) * zoom;
+                    
+                    panX += deltaX;
+                    panY -= deltaY; // Flip Y axis
+                    
+                    updateZoomDisplay();
+                    drawPoints();
+                }
+            }
+            
+            // Reset zoom and pan to default
+            function resetZoom() {
+                zoom = 1.0;
+                panX = 0;
+                panY = 0;
+                updateZoomDisplay();
+                drawPoints();
+            }
+            
+            // Update zoom level display
+            function updateZoomDisplay() {
+                document.getElementById('zoomLevel').textContent = (zoom * 100).toFixed(0) + '%';
+            }
+            
+            // Annealing options are now always visible, no need to toggle visibility
             
             function addPoint(event) {
                 const rect = canvas.getBoundingClientRect();
@@ -220,83 +590,105 @@ async def read_root():
             }
             
             function drawGrid() {
+                // Calculate visible world bounds
+                const topLeft = canvasToWorld(0, 0);
+                const bottomRight = canvasToWorld(canvas.width, canvas.height);
+                
+                // Adaptive grid size based on zoom level
+                let baseGridSize = 50;
+                let gridSize = baseGridSize;
+                while (gridSize * zoom < 20) {
+                    gridSize *= 2;
+                }
+                while (gridSize * zoom > 100) {
+                    gridSize /= 2;
+                }
+                
                 // Draw grid lines
                 ctx.strokeStyle = '#e0e0e0';
-                ctx.lineWidth = 0.5;
+                ctx.lineWidth = 0.5 / zoom;
                 
-                const gridSize = 50; // Grid spacing in world units (50 units = 50 pixels)
+                // Calculate grid start and end points
+                const startX = Math.floor(topLeft.x / gridSize) * gridSize;
+                const endX = Math.ceil(bottomRight.x / gridSize) * gridSize;
+                const startY = Math.floor(bottomRight.y / gridSize) * gridSize;
+                const endY = Math.ceil(topLeft.y / gridSize) * gridSize;
                 
                 // Vertical grid lines
-                for (let worldX = 0; worldX <= canvas.width; worldX += gridSize) {
-                    const canvasCoords = worldToCanvas(worldX, 0);
+                for (let worldX = startX; worldX <= endX; worldX += gridSize) {
+                    const canvasCoords1 = worldToCanvas(worldX, topLeft.y);
+                    const canvasCoords2 = worldToCanvas(worldX, bottomRight.y);
                     ctx.beginPath();
-                    ctx.moveTo(canvasCoords.x, 0);
-                    ctx.lineTo(canvasCoords.x, canvas.height);
+                    ctx.moveTo(canvasCoords1.x, canvasCoords1.y);
+                    ctx.lineTo(canvasCoords2.x, canvasCoords2.y);
                     ctx.stroke();
                 }
                 
                 // Horizontal grid lines
-                for (let worldY = 0; worldY <= canvas.height; worldY += gridSize) {
-                    const canvasCoords = worldToCanvas(0, worldY);
+                for (let worldY = startY; worldY <= endY; worldY += gridSize) {
+                    const canvasCoords1 = worldToCanvas(topLeft.x, worldY);
+                    const canvasCoords2 = worldToCanvas(bottomRight.x, worldY);
                     ctx.beginPath();
-                    ctx.moveTo(0, canvasCoords.y);
-                    ctx.lineTo(canvas.width, canvasCoords.y);
+                    ctx.moveTo(canvasCoords1.x, canvasCoords1.y);
+                    ctx.lineTo(canvasCoords2.x, canvasCoords2.y);
                     ctx.stroke();
                 }
                 
-                // Draw scale marks and labels
-                ctx.fillStyle = '#666';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                
-                // X-axis scale marks (bottom)
-                for (let worldX = 0; worldX <= canvas.width; worldX += gridSize) {
-                    const canvasCoords = worldToCanvas(worldX, 0);
-                    ctx.fillText(worldX.toFixed(0), canvasCoords.x, canvas.height - 15);
+                // Draw scale marks and labels (only if zoom is reasonable)
+                if (zoom > 0.3) {
+                    ctx.fillStyle = '#666';
+                    ctx.font = `${12 / zoom}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
                     
-                    // Draw tick marks
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(canvasCoords.x, canvas.height - 5);
-                    ctx.lineTo(canvasCoords.x, canvas.height);
-                    ctx.stroke();
-                }
-                
-                // Y-axis scale marks (left side)
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'middle';
-                for (let worldY = 0; worldY <= canvas.height; worldY += gridSize) {
-                    const canvasCoords = worldToCanvas(0, worldY);
-                    ctx.fillText(worldY.toFixed(0), 25, canvasCoords.y);
+                    // X-axis scale marks
+                    for (let worldX = startX; worldX <= endX; worldX += gridSize) {
+                        const canvasCoords = worldToCanvas(worldX, 0);
+                        if (canvasCoords.y >= 0 && canvasCoords.y <= canvas.height) {
+                            ctx.save();
+                            ctx.scale(zoom, zoom);
+                            ctx.fillText(worldX.toFixed(0), canvasCoords.x / zoom, (canvasCoords.y + 5) / zoom);
+                            ctx.restore();
+                        }
+                    }
                     
-                    // Draw tick marks
-                    ctx.strokeStyle = '#333';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(0, canvasCoords.y);
-                    ctx.lineTo(5, canvasCoords.y);
-                    ctx.stroke();
+                    // Y-axis scale marks
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    for (let worldY = startY; worldY <= endY; worldY += gridSize) {
+                        const canvasCoords = worldToCanvas(0, worldY);
+                        if (canvasCoords.x >= 0 && canvasCoords.x <= canvas.width) {
+                            ctx.save();
+                            ctx.scale(zoom, zoom);
+                            ctx.fillText(worldY.toFixed(0), (canvasCoords.x - 5) / zoom, canvasCoords.y / zoom);
+                            ctx.restore();
+                        }
+                    }
                 }
                 
                 // Draw axes
                 ctx.strokeStyle = '#333';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 2 / zoom;
                 
                 // X-axis (at world Y=0)
-                const xAxisY = worldToCanvas(0, 0).y;
-                ctx.beginPath();
-                ctx.moveTo(0, xAxisY);
-                ctx.lineTo(canvas.width, xAxisY);
-                ctx.stroke();
+                const xAxis1 = worldToCanvas(topLeft.x, 0);
+                const xAxis2 = worldToCanvas(bottomRight.x, 0);
+                if (xAxis1.y >= 0 && xAxis1.y <= canvas.height) {
+                    ctx.beginPath();
+                    ctx.moveTo(xAxis1.x, xAxis1.y);
+                    ctx.lineTo(xAxis2.x, xAxis2.y);
+                    ctx.stroke();
+                }
                 
                 // Y-axis (at world X=0)
-                const yAxisX = worldToCanvas(0, 0).x;
-                ctx.beginPath();
-                ctx.moveTo(yAxisX, 0);
-                ctx.lineTo(yAxisX, canvas.height);
-                ctx.stroke();
+                const yAxis1 = worldToCanvas(0, topLeft.y);
+                const yAxis2 = worldToCanvas(0, bottomRight.y);
+                if (yAxis1.x >= 0 && yAxis1.x <= canvas.width) {
+                    ctx.beginPath();
+                    ctx.moveTo(yAxis1.x, yAxis1.y);
+                    ctx.lineTo(yAxis2.x, yAxis2.y);
+                    ctx.stroke();
+                }
             }
             
             function drawPoints() {
@@ -309,15 +701,18 @@ async def read_root():
                 ctx.fillStyle = 'red';
                 points.forEach(point => {
                     const canvasCoords = worldToCanvas(point.x, point.y);
-                    ctx.beginPath();
-                    ctx.arc(canvasCoords.x, canvasCoords.y, 5, 0, 2 * Math.PI);
-                    ctx.fill();
+                    if (canvasCoords.x >= -10 && canvasCoords.x <= canvas.width + 10 && 
+                        canvasCoords.y >= -10 && canvasCoords.y <= canvas.height + 10) {
+                        ctx.beginPath();
+                        ctx.arc(canvasCoords.x, canvasCoords.y, Math.max(3, 5 / zoom), 0, 2 * Math.PI);
+                        ctx.fill();
+                    }
                 });
                 
                 // Draw lines between consecutive points
                 if (points.length > 1) {
                     ctx.strokeStyle = 'blue';
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = Math.max(1, 2 / zoom);
                     ctx.beginPath();
                     const firstCanvas = worldToCanvas(points[0].x, points[0].y);
                     ctx.moveTo(firstCanvas.x, firstCanvas.y);
@@ -342,38 +737,51 @@ async def read_root():
                 // Draw triangles
                 if (mesh.triangles && mesh.triangles.length > 0) {
                     ctx.strokeStyle = 'green';
-                    ctx.lineWidth = 1;
+                    ctx.lineWidth = Math.max(0.5, 1 / zoom);
                     
                     mesh.triangles.forEach(triangle => {
-                        ctx.beginPath();
                         const p1 = worldToCanvas(triangle[0].x, triangle[0].y);
                         const p2 = worldToCanvas(triangle[1].x, triangle[1].y);
                         const p3 = worldToCanvas(triangle[2].x, triangle[2].y);
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.lineTo(p3.x, p3.y);
-                        ctx.closePath();
-                        ctx.stroke();
+                        
+                        // Only draw if at least one point is visible
+                        if ((p1.x >= -10 && p1.x <= canvas.width + 10 && p1.y >= -10 && p1.y <= canvas.height + 10) ||
+                            (p2.x >= -10 && p2.x <= canvas.width + 10 && p2.y >= -10 && p2.y <= canvas.height + 10) ||
+                            (p3.x >= -10 && p3.x <= canvas.width + 10 && p3.y >= -10 && p3.y <= canvas.height + 10)) {
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.lineTo(p3.x, p3.y);
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
                     });
                 }
                 
                 // Draw quads
                 if (mesh.quads && mesh.quads.length > 0) {
                     ctx.strokeStyle = 'purple';
-                    ctx.lineWidth = 1;
+                    ctx.lineWidth = Math.max(0.5, 1 / zoom);
                     
                     mesh.quads.forEach(quad => {
-                        ctx.beginPath();
                         const p1 = worldToCanvas(quad[0].x, quad[0].y);
                         const p2 = worldToCanvas(quad[1].x, quad[1].y);
                         const p3 = worldToCanvas(quad[2].x, quad[2].y);
                         const p4 = worldToCanvas(quad[3].x, quad[3].y);
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.lineTo(p3.x, p3.y);
-                        ctx.lineTo(p4.x, p4.y);
-                        ctx.closePath();
-                        ctx.stroke();
+                        
+                        // Only draw if at least one point is visible
+                        if ((p1.x >= -10 && p1.x <= canvas.width + 10 && p1.y >= -10 && p1.y <= canvas.height + 10) ||
+                            (p2.x >= -10 && p2.x <= canvas.width + 10 && p2.y >= -10 && p2.y <= canvas.height + 10) ||
+                            (p3.x >= -10 && p3.x <= canvas.width + 10 && p3.y >= -10 && p3.y <= canvas.height + 10) ||
+                            (p4.x >= -10 && p4.x <= canvas.width + 10 && p4.y >= -10 && p4.y <= canvas.height + 10)) {
+                            ctx.beginPath();
+                            ctx.moveTo(p1.x, p1.y);
+                            ctx.lineTo(p2.x, p2.y);
+                            ctx.lineTo(p3.x, p3.y);
+                            ctx.lineTo(p4.x, p4.y);
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
                     });
                 }
             }
@@ -413,6 +821,10 @@ async def read_root():
                 document.getElementById('meshInfo').innerHTML = '';
             }
             
+            // Initialize the interface
+            updateZoomDisplay();
+            drawPoints();
+            
             async function generateMesh() {
                 if (points.length < 3) {
                     alert('Need at least 3 points to generate a mesh');
@@ -445,11 +857,13 @@ async def read_root():
                     algorithm: algorithm
                 };
                 
-                // Add annealing options if any annealing checkboxes are checked or grid-annealing is selected
+                // Add annealing options if annealing is enabled
+                const enableAnnealing = document.getElementById('enableAnnealing').checked;
                 const checkVolume = document.getElementById('checkVolume').checked;
                 const checkAspectRatio = document.getElementById('checkAspectRatio').checked;
+                const checkSizeUniformity = document.getElementById('checkSizeUniformity').checked;
                 
-                if (algorithm === 'grid-annealing' || checkVolume || checkAspectRatio) {
+                if (enableAnnealing && (algorithm === 'grid-annealing' || checkVolume || checkAspectRatio || checkSizeUniformity)) {
                     requestData.annealing_options = {
                         temperature: parseFloat(document.getElementById('temperature').value),
                         cooling_rate: parseFloat(document.getElementById('coolingRate').value),
@@ -457,9 +871,13 @@ async def read_root():
                         max_iterations: parseInt(document.getElementById('maxIterations').value),
                         check_volume: checkVolume,
                         check_aspect_ratio: checkAspectRatio,
+                        check_size_uniformity: checkSizeUniformity,
                         target_aspect_ratio: parseFloat(document.getElementById('targetAspectRatio').value),
                         volume_weight: parseFloat(document.getElementById('volumeWeight').value),
-                        aspect_ratio_weight: parseFloat(document.getElementById('aspectRatioWeight').value)
+                        aspect_ratio_weight: parseFloat(document.getElementById('aspectRatioWeight').value),
+                        size_uniformity_weight: parseFloat(document.getElementById('sizeUniformityWeight').value),
+                        target_area: meshMaxArea, // Use the same area as mesh generation
+                        min_area: parseFloat(document.getElementById('minArea').value)
                     };
                 }
                 
@@ -610,7 +1028,11 @@ async def generate_mesh(request: MeshRequest):
                 "check_aspect_ratio": request.annealing_options.check_aspect_ratio,
                 "target_aspect_ratio": request.annealing_options.target_aspect_ratio,
                 "volume_weight": request.annealing_options.volume_weight,
-                "aspect_ratio_weight": request.annealing_options.aspect_ratio_weight
+                "aspect_ratio_weight": request.annealing_options.aspect_ratio_weight,
+                "check_size_uniformity": request.annealing_options.check_size_uniformity,
+                "size_uniformity_weight": request.annealing_options.size_uniformity_weight,
+                "target_area": request.annealing_options.target_area,
+                "min_area": request.annealing_options.min_area
             }
         
         logger.info(f"MESH_GENERATION - Calling Rust binary with {len(rust_input['geometry']['points'])} points")

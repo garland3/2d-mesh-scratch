@@ -56,6 +56,10 @@ pub struct AnnealingOptions {
     pub target_aspect_ratio: Option<f64>,
     pub volume_weight: Option<f64>,
     pub aspect_ratio_weight: Option<f64>,
+    pub check_size_uniformity: Option<bool>,
+    pub size_uniformity_weight: Option<f64>,
+    pub target_area: Option<f64>,
+    pub min_area: Option<f64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
