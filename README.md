@@ -1,30 +1,29 @@
-# 2D Geometry & FEA Mesh Generator
+# 2D Geometry & FEA Mesh Generator (WASM)
 
 ![Application Screenshot](imgs/Screenshot%202025-07-09%20170933.png)
 
-A powerful web-based tool for generating high-quality 2D finite element meshes with multiple algorithms and interactive visualization.
+A powerful WebAssembly-based tool for generating high-quality 2D finite element meshes with interactive web visualization.
 
 ## Features
 
+- **WebAssembly Performance**: Fast mesh generation running directly in the browser
 - **Interactive Web Interface**: Click to add boundary points and visualize meshes in real-time
 - **Multiple Mesh Algorithms**:
   - **Delaunay Triangulation**: Fast, robust triangulation for general geometries
   - **Paving (Quad-dominant)**: Structured grid-based approach for rectangular regions
   - **Simulated Annealing**: Advanced optimization for high-quality meshes
-- **Quality Control**: Configurable area constraints and minimum angle requirements
-- **Export Capabilities**: CSV export for use in FEA software
-- **Comprehensive Logging**: Detailed telemetry and error tracking
+- **Client-side Processing**: No server required, runs entirely in the browser
 - **Real-time Visualization**: Interactive canvas with grid and mesh display
+- **Export Capabilities**: Download mesh data for use in FEA software
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.7+
-- FastAPI and dependencies (see `requirements.txt`)
-- Pre-compiled Rust binary (included) or Rust toolchain for development
+- Modern web browser with WebAssembly support
+- No installation required - runs directly in browser
 
-### Installation
+### Usage
 
 1. **Clone the repository**:
    ```bash
@@ -32,24 +31,13 @@ A powerful web-based tool for generating high-quality 2D finite element meshes w
    cd special-funicular
    ```
 
-2. **Run the setup script**:
+2. **Open the application**:
    ```bash
-   ./setup.sh
+   open index.html
    ```
+   Or simply double-click `index.html` in your file manager
 
-   For development with Rust:
-   ```bash
-   ./setup.sh --rust
-   ```
-
-3. **Start the server**:
-   ```bash
-   python main.py
-   ```
-
-4. **Open your browser** to `http://localhost:8000`
-
-## Usage
+## How to Use
 
 ### Web Interface
 
@@ -59,25 +47,11 @@ A powerful web-based tool for generating high-quality 2D finite element meshes w
    - **Max Area**: Control element size (smaller = finer mesh)
    - **Min Angle**: Set quality threshold (higher = better quality)
 3. **Generate Mesh**: Click "Generate Mesh" to create the mesh
-4. **Export**: Use "Export to CSV" to save mesh data
+4. **Export**: Use "Export" to download mesh data
 
-### Command Line Interface
+### Development
 
-The Rust binary supports multiple modes:
-
-```bash
-# Test with example data
-./target/release/mesh-generator test
-
-# Interactive mode
-./target/release/mesh-generator interactive
-
-# Process JSON from file
-./target/release/mesh-generator json geometry.json
-
-# Process JSON from stdin
-echo '{"geometry":{"points":[...],"name":"test"},"max_area":0.1,"algorithm":"delaunay"}' | ./target/release/mesh-generator json-stdin
-```
+The legacy Python/FastAPI version is available in the `test/` directory for reference and development.
 
 ## Mesh Algorithms
 
@@ -101,41 +75,13 @@ echo '{"geometry":{"points":[...],"name":"test"},"max_area":0.1,"algorithm":"del
   4. Optimizes point positions using simulated annealing
   5. Stops when quality threshold is reached
 
-## API Reference
+## WebAssembly API
 
-### Mesh Generation Endpoint
+The mesh generation is handled by WebAssembly functions exported from the Rust library:
 
-```
-POST /generate-mesh
-Content-Type: application/json
-
-{
-  "geometry": {
-    "points": [
-      {"x": 0, "y": 0},
-      {"x": 1, "y": 0},
-      {"x": 1, "y": 1},
-      {"x": 0, "y": 1}
-    ],
-    "name": "rectangle"
-  },
-  "max_area": 0.1,
-  "min_angle": 20.0,
-  "algorithm": "delaunay"
-}
-```
-
-### CSV Export Endpoint
-
-```
-POST /export-csv
-Content-Type: application/json
-
-{
-  "points": [...],
-  "name": "geometry"
-}
-```
+- `generate_mesh()`: Main mesh generation function
+- `set_algorithm()`: Configure mesh algorithm
+- `export_data()`: Export mesh data for download
 
 ## Quality Metrics
 
@@ -146,17 +92,9 @@ The mesh generator uses several quality metrics:
 - **Area Constraints**: Controls element size distribution
 - **Boundary Conformity**: Maintains geometric accuracy
 
-## Logging and Monitoring
+## Browser Debugging
 
-All operations are logged to the `log` file with detailed telemetry:
-
-```
-2025-07-09 23:09:18,913 - main - INFO - SESSION_START [d65f5002] - IP: 136.226.98.48, Method: POST, Path: /generate-mesh
-2025-07-09 23:09:18,913 - main - INFO - MESH_GENERATION - Starting mesh generation with 4 points, algorithm: annealing
-2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - ANNEALING - Starting simulated annealing mesh generation
-2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - ANNEALING - Refined boundary to 82 points
-2025-07-09 23:09:18,927 - main - INFO - RUST_OUTPUT - ANNEALING - Generated internal grid with 1704 points
-```
+Check browser console for mesh generation output and any errors.
 
 ## Development
 
@@ -164,79 +102,51 @@ All operations are logged to the `log` file with detailed telemetry:
 
 ```
 special-funicular/
-├── main.py              # FastAPI web server
+├── index.html           # Main web application
+├── js_mesher.mthml     # Web interface code
 ├── src/
-│   ├── lib.rs           # Rust mesh generation library
-│   └── main.rs          # Rust CLI binary
-├── target/release/      # Compiled Rust binary
-├── static/              # Static web assets
-├── requirements.txt     # Python dependencies
+│   └── lib.rs          # Rust WASM mesh generation library
+├── pkg/                # Generated WebAssembly package
+│   ├── rust_mesher.js  # WASM bindings
+│   └── rust_mesher_bg.wasm # Compiled WebAssembly
 ├── Cargo.toml          # Rust dependencies
-├── setup.sh            # Development setup script
+├── test/               # Legacy Python/FastAPI version
 └── README.md           # This file
 ```
 
 ### Building from Source
 
-If you need to rebuild the Rust binary:
+To rebuild the WebAssembly module:
 
 ```bash
-cargo build --release
+wasm-pack build --target web
 ```
 
 ### Running Tests
 
 ```bash
-# Test fast build
+# Test the WASM build
 ./fast_test.sh
-
-# Test specific algorithm
-echo '{"geometry":{"points":[...],"max_area":0.1,"algorithm":"annealing"}' | ./target/release/mesh-generator json-stdin
 ```
-
-## Configuration
-
-### Environment Variables
-
-- `RUST_LOG`: Set logging level (default: info)
-- `PORT`: Web server port (default: 8000)
-
-### Quality Thresholds
-
-- **Delaunay**: Optimized for speed and robustness
-- **Paving**: Balanced quality and structure
-- **Annealing**: Customizable quality threshold via `min_angle` parameter
 
 ## Performance
 
-### Typical Performance Metrics
-
-- **Delaunay**: 1000+ triangles/second
-- **Paving**: 500+ quads/second  
-- **Annealing**: 10-100 triangles/second (depends on quality requirements)
+WebAssembly provides near-native performance for mesh generation directly in the browser.
 
 ### Optimization Tips
 
 1. **Use appropriate max_area**: Smaller values = more elements = slower generation
 2. **Choose algorithm wisely**: Delaunay for speed, Annealing for quality
 3. **Set reasonable quality thresholds**: Higher min_angle = more optimization time
-4. **Monitor logs**: Check `log` file for performance insights
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Port already in use**: Change port in `main.py` or kill existing process
-2. **Rust binary not found**: Ensure `target/release/mesh-generator` exists
+1. **WebAssembly not loading**: Ensure you're serving from a web server (not file://)
+2. **Browser compatibility**: Use a modern browser with WASM support
 3. **Poor mesh quality**: Try Simulated Annealing with higher min_angle
 4. **Slow generation**: Increase max_area or use Delaunay algorithm
-
-### Debug Mode
-
-Enable detailed logging:
-```bash
-RUST_LOG=debug python main.py
-```
 
 ## Contributing
 
@@ -253,6 +163,6 @@ This project is open source. See LICENSE file for details.
 ## Support
 
 For issues and questions:
-- Check the `log` file for error details
+- Check browser console for error details
 - Review this README for configuration options
 - Submit issues via the project repository
