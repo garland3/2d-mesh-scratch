@@ -1,29 +1,30 @@
-# 2D Geometry & FEA Mesh Generator (WASM)
+# 2D Geometry & FEA Mesh Generator
 
 ![Application Screenshot](imgs/Screenshot%202025-07-09%20170933.png)
 
-A powerful WebAssembly-based tool for generating high-quality 2D finite element meshes with interactive web visualization.
+A powerful mesh generation tool with both WebAssembly web interface and command-line capabilities for generating high-quality 2D finite element meshes.
 
 ## Features
 
+- **Dual Interface**: Both web browser (WASM) and command-line tool
 - **WebAssembly Performance**: Fast mesh generation running directly in the browser
 - **Interactive Web Interface**: Click to add boundary points and visualize meshes in real-time
+- **Command Line Tool**: Scriptable mesh generation for automation and batch processing
 - **Multiple Mesh Algorithms**:
   - **Delaunay Triangulation**: Fast, robust triangulation for general geometries
   - **Paving (Quad-dominant)**: Structured grid-based approach for rectangular regions
   - **Simulated Annealing**: Advanced optimization for high-quality meshes
-- **Client-side Processing**: No server required, runs entirely in the browser
-- **Real-time Visualization**: Interactive canvas with grid and mesh display
-- **Export Capabilities**: Download mesh data for use in FEA software
+- **Quality Control**: Configurable refinement and smoothing algorithms
+- **Export Capabilities**: JSON output for use in FEA software and analysis tools
 
 ## Quick Start
 
 ### Prerequisites
 
-- Modern web browser with WebAssembly support
-- No installation required - runs directly in browser
+- Modern web browser with WebAssembly support (for web interface)
+- Rust toolchain (for building CLI tool from source)
 
-### Usage
+### Web Interface
 
 1. **Clone the repository**:
    ```bash
@@ -31,11 +32,32 @@ A powerful WebAssembly-based tool for generating high-quality 2D finite element 
    cd special-funicular
    ```
 
-2. **Open the application**:
+2. **Open the web application**:
    ```bash
    open index.html
    ```
    Or simply double-click `index.html` in your file manager
+
+### Command Line Tool
+
+1. **Build the CLI tool**:
+   ```bash
+   cargo build --bin mesher --release
+   ```
+
+2. **Run the demo**:
+   ```bash
+   ./mesh_box.sh
+   ```
+
+3. **Use the CLI tool**:
+   ```bash
+   # Quick test
+   ./target/release/mesher test
+   
+   # Process JSON input
+   echo '{"geometry":{"points":[...]}, "density":0.1}' | ./target/release/mesher json-stdin
+   ```
 
 ## How to Use
 
@@ -48,6 +70,56 @@ A powerful WebAssembly-based tool for generating high-quality 2D finite element 
    - **Min Angle**: Set quality threshold (higher = better quality)
 3. **Generate Mesh**: Click "Generate Mesh" to create the mesh
 4. **Export**: Use "Export" to download mesh data
+
+### Command Line Interface
+
+The mesh generator includes a powerful CLI tool for batch processing and automation.
+
+#### Usage Modes
+
+```bash
+# Test with built-in example
+./target/release/mesher test
+
+# Process JSON from file
+./target/release/mesher json geometry.json
+
+# Process JSON from stdin
+echo '{"geometry": {...}, "density": 0.1}' | ./target/release/mesher json-stdin
+
+# Interactive mode
+./target/release/mesher interactive
+```
+
+#### JSON Input Format
+
+```json
+{
+  "geometry": {
+    "points": [
+      {"x": 0.0, "y": 0.0},
+      {"x": 2.0, "y": 0.0},
+      {"x": 2.0, "y": 1.0},
+      {"x": 0.0, "y": 1.0}
+    ],
+    "name": "rectangle"
+  },
+  "density": 0.15,
+  "refine_metric": "angle",
+  "refine_threshold": 25.0,
+  "refine_iterations": 50,
+  "smooth_iterations": 3
+}
+```
+
+#### Example: Box Mesh Generation
+
+Run the included demo script:
+```bash
+./mesh_box.sh
+```
+
+This generates a mesh for a 2×1 rectangle with refinement and smoothing, outputting detailed statistics and saving the result to `box_mesh.json`.
 
 ### Development
 
@@ -104,27 +176,44 @@ Check browser console for mesh generation output and any errors.
 special-funicular/
 ├── index.html           # Main web application
 ├── js_mesher.mthml     # Web interface code
+├── mesh_box.sh         # CLI demo script
 ├── src/
-│   └── lib.rs          # Rust WASM mesh generation library
+│   ├── lib.rs          # WASM interface wrapper
+│   ├── main.rs         # CLI tool main
+│   ├── geometry.rs     # Point and Triangle geometry
+│   └── mesher.rs       # Core mesh generation algorithms
 ├── pkg/                # Generated WebAssembly package
 │   ├── rust_mesher.js  # WASM bindings
 │   └── rust_mesher_bg.wasm # Compiled WebAssembly
-├── Cargo.toml          # Rust dependencies
+├── target/
+│   └── release/
+│       └── mesher      # Compiled CLI binary
+├── Cargo.toml          # Rust dependencies and binary config
 ├── test/               # Legacy Python/FastAPI version
 └── README.md           # This file
 ```
 
 ### Building from Source
 
-To rebuild the WebAssembly module:
-
+Build the WebAssembly module:
 ```bash
 wasm-pack build --target web
+```
+
+Build the CLI tool:
+```bash
+cargo build --bin mesher --release
 ```
 
 ### Running Tests
 
 ```bash
+# Test the CLI tool
+./target/release/mesher test
+
+# Test with demo script
+./mesh_box.sh
+
 # Test the WASM build
 ./fast_test.sh
 ```
