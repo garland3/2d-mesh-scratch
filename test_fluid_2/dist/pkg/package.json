@@ -1,0 +1,15 @@
+{
+  "name": "fluid_simulator",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "fluid_simulator_bg.wasm",
+    "fluid_simulator.js",
+    "fluid_simulator.d.ts"
+  ],
+  "main": "fluid_simulator.js",
+  "types": "fluid_simulator.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
