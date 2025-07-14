@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPH Fluid Simulator - Vector Field</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .control-panel {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        canvas {
+            cursor: default;
+        }
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0.75rem;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #E5E7EB;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #4A5568;
+            border-radius: 9999px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #6366F1;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #6366F1;
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        .btn {
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col md:flex-row h-screen items-center justify-center p-4">
+
+    <!-- Canvas for the simulation -->
+    <canvas id="simulationCanvas" class="w-full h-full md:w-3/4 md:h-full rounded-lg shadow-2xl border border-gray-700"></canvas>
+
+    <!-- Control Panel -->
+    <div id="controls" class="control-panel w-full md:w-1/4 md:h-full p-6 rounded-lg shadow-2xl md:ml-4 mt-4 md:mt-0 overflow-y-auto">
+        <h1 class="text-2xl font-bold mb-4 text-center text-indigo-300">Fluid Controls</h1>
+        
+        <!-- Simulation Parameters -->
+        <div class="slider-container">
+            <label for="gravity" class="slider-label"><span>Gravity</span><span id="gravityValue">0</span></label>
+            <input type="range" id="gravity" data-param="GRAVITY" min="0" max="5" step="0.05" value="0" class="w-full">
+        </div>
+        <div class="slider-container">
+            <label for="viscosity" class="slider-label"><span>Viscosity</span><span id="viscosityValue">0.02</span></label>
+            <input type="range" id="viscosity" data-param="VISCOSITY" min="0.001" max="0.5" step="0.005" value="0.02" class="w-full">
+        </div>
+        <div class="slider-container">
+            <label for="particleRadius" class="slider-label"><span>Particle Radius</span><span id="particleRadiusValue">5</span></label>
+            <input type="range" id="particleRadius" data-param="PARTICLE_RADIUS" min="1" max="20" step="0.5" value="5" class="w-full">
+        </div>
+        <div class="slider-container">
+            <label for="stiffness" class="slider-label"><span>Stiffness</span><span id="stiffnessValue">0.5</span></label>
+            <input type="range" id="stiffness" data-param="STIFFNESS" min="0.01" max="10" step="0.05" value="0.5" class="w-full">
+        </div>
+        <div class="slider-container">
+            <label for="restDensity" class="slider-label"><span>Rest Density</span><span id="restDensityValue">4</span></label>
+            <input type="range" id="restDensity" data-param="REST_DENSITY" min="0.5" max="50" step="0.5" value="4" class="w-full">
+        </div>
+        <div class="slider-container">
+            <label for="maxParticles" class="slider-label"><span>Max Particles</span><span id="maxParticlesValue">500</span></label>
+            <input type="range" id="maxParticles" data-param="MAX_PARTICLES" min="50" max="5000" step="50" value="500" class="w-full">
+        </div>
+        <div class="slider-container">
+            <label for="timeStep" class="slider-label"><span>Time Step</span><span id="timeStepValue">0.016</span></label>
+            <input type="range" id="timeStep" data-param="TIME_STEP" min="0.001" max="0.05" step="0.001" value="0.016" class="w-full">
+        </div>
+
+        <!-- Environment Controls -->
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold mb-2 text-center text-indigo-300">Environment Tools</h2>
+            <p id="modeIndicator" class="text-center h-5 mb-2 text-sm font-medium text-yellow-300"></p>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="addInlet" class="btn bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded-lg font-semibold">Add Inlet</button>
+                <button id="addOutlet" class="btn bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg font-semibold">Add Outlet</button>
+                <button id="drawWall" class="btn bg-green-500 hover:bg-green-600 col-span-2 px-3 py-2 rounded-lg font-semibold">Draw Wall</button>
+                <button id="addDirectionalEmitter" class="btn bg-purple-500 hover:bg-purple-600 col-span-2 px-3 py-2 rounded-lg font-semibold">Add Directional Emitter</button>
+                <button id="eraser" class="btn bg-gray-500 hover:bg-gray-600 px-3 py-2 rounded-lg font-semibold">🗑️ Eraser</button>
+                <button id="clearEnvironment" class="btn bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded-lg font-semibold">Clear All</button>
+            </div>
+            <div class="mt-4 flex items-center justify-center">
+                <input type="checkbox" id="showVectorField" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <label for="showVectorField" class="ml-2 block text-sm text-gray-300">Show Velocity Field</label>
+            </div>
+        </div>
+
+        <!-- Emitter Settings -->
+        <div class="mt-6">
+            <h2 class="text-lg font-semibold mb-2 text-center text-indigo-300">Emitter Settings</h2>
+            <div class="slider-container">
+                <label for="emitterVelocity" class="slider-label">
+                    <span>Emission Velocity</span>
+                    <span id="emitterVelocityValue">50</span>
+                </label>
+                <input type="range" id="emitterVelocity" min="10" max="200" step="5" value="50" class="w-full">
+            </div>
+            <div class="slider-container">
+                <label for="emitterSpread" class="slider-label">
+                    <span>Emission Spread (°)</span>
+                    <span id="emitterSpreadValue">17</span>
+                </label>
+                <input type="range" id="emitterSpread" min="0" max="90" step="1" value="17" class="w-full">
+            </div>
+        </div>
+
+        <!-- Simulation Control Buttons -->
+        <div class="mt-8 flex flex-col space-y-3">
+            <button id="startStop" class="btn bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg text-lg">Start</button>
+            <button id="reset" class="btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg text-lg">Reset All</button>
+        </div>
+    </div>
+
+    <script src="combined.js"></script>
+    <script type="module">
+        import init, { FluidSimulator } from './pkg/fluid_simulator.js';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const canvas = document.getElementById('simulationCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Initialize modules
+            const emitterManager = new window.EmitterManager();
+            const renderer = new window.FluidRenderer(canvas, ctx);
+            const controls = new window.SimulationControls();
+            
+            let simulator = null;
+            let mousePos = null;
+
+            // Initialize WASM
+            try {
+                await init();
+                console.log('WASM loaded successfully');
+            } catch (error) {
+                console.error('Failed to load WASM:', error);
+                return;
+            }
+
+            // Initialize simulator
+            function initSimulator() {
+                simulator = new FluidSimulator(canvas.width, canvas.height);
+                controls.setSimulator(simulator);
+            }
+
+            // Animation loop
+            function animate() {
+                if (simulator) {
+                    simulator.update();
+                    renderer.render(simulator, emitterManager, mousePos);
+                }
+            }
+
+            // Event handlers
+            function getCanvasPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+
+            // Setup event listeners
+            window.addEventListener('resize', () => {
+                renderer.resizeCanvas();
+                initSimulator();
+            });
+
+            // Button events
+            document.getElementById('addInlet').addEventListener('click', () => {
+                const mode = emitterManager.setMode('inlet');
+                controls.updateModeIndicator(mode.text, mode.cursor);
+                canvas.style.cursor = mode.cursor;
+            });
+
+            document.getElementById('addDirectionalEmitter').addEventListener('click', () => {
+                const mode = emitterManager.setMode('directional');
+                controls.updateModeIndicator(mode.text, mode.cursor);
+                canvas.style.cursor = mode.cursor;
+            });
+
+            document.getElementById('addOutlet').addEventListener('click', () => {
+                const mode = emitterManager.setMode('outlet');
+                controls.updateModeIndicator(mode.text, mode.cursor);
+                canvas.style.cursor = mode.cursor;
+            });
+
+            document.getElementById('drawWall').addEventListener('click', () => {
+                const mode = emitterManager.setMode('wall');
+                controls.updateModeIndicator(mode.text, mode.cursor);
+                canvas.style.cursor = mode.cursor;
+            });
+
+            document.getElementById('eraser').addEventListener('click', () => {
+                const mode = emitterManager.setMode('eraser');
+                controls.updateModeIndicator(mode.text, mode.cursor);
+                canvas.style.cursor = mode.cursor;
+            });
+
+            document.getElementById('clearEnvironment').addEventListener('click', () => {
+                emitterManager.clear(simulator);
+                controls.updateModeIndicator('', 'default');
+                canvas.style.cursor = 'default';
+                if (!controls.isRunning) {
+                    renderer.render(simulator, emitterManager);
+                }
+            });
+
+            document.getElementById('startStop').addEventListener('click', () => {
+                if (controls.isRunning) {
+                    controls.stopSimulation();
+                } else {
+                    controls.startSimulation(animate);
+                }
+            });
+
+            document.getElementById('reset').addEventListener('click', () => {
+                controls.resetSimulation(() => {
+                    emitterManager.clear(simulator);
+                    initSimulator();
+                    renderer.render(simulator, emitterManager);
+                });
+            });
+
+            document.getElementById('showVectorField').addEventListener('change', (e) => {
+                renderer.setShowVectorField(e.target.checked);
+                if (!controls.isRunning) {
+                    renderer.render(simulator, emitterManager);
+                }
+            });
+
+            // Emitter controls
+            document.getElementById('emitterVelocity').addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('emitterVelocityValue').textContent = value;
+                emitterManager.setEmitterVelocity(value);
+            });
+
+            document.getElementById('emitterSpread').addEventListener('input', (e) => {
+                const degrees = parseFloat(e.target.value);
+                const radians = degrees * Math.PI / 180;
+                document.getElementById('emitterSpreadValue').textContent = degrees;
+                emitterManager.setEmitterSpread(radians);
+            });
+
+            // Canvas mouse events
+            canvas.addEventListener('mousedown', (e) => {
+                const pos = getCanvasPos(e);
+                emitterManager.handleMouseDown(pos.x, pos.y, simulator);
+                if (!controls.isRunning) {
+                    renderer.render(simulator, emitterManager, mousePos);
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                mousePos = getCanvasPos(e);
+                if (!controls.isRunning) {
+                    renderer.render(simulator, emitterManager, mousePos);
+                }
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                const pos = getCanvasPos(e);
+                emitterManager.handleMouseUp(pos.x, pos.y, simulator);
+                if (!controls.isRunning) {
+                    renderer.render(simulator, emitterManager, mousePos);
+                }
+            });
+
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (emitterManager.handleRightClick()) {
+                    controls.updateModeIndicator('', 'default');
+                    canvas.style.cursor = 'default';
+                }
+            });
+
+            // Initialize
+            renderer.resizeCanvas();
+            initSimulator();
+            renderer.render(simulator, emitterManager);
+        });
+\
+            // Setup parameter sliders\
+            document.querySelectorAll('.slider-container input[type="range"]').forEach(slider => {\
+                const valueElem = slider.parentElement.querySelector('.slider-label span:last-child');\
+                if (valueElem) {\
+                    valueElem.textContent = slider.value;\
+                }\
+                \
+                slider.addEventListener('input', function() {\
+                    if (valueElem) {\
+                        valueElem.textContent = this.value;\
+                    }\
+                    \
+                    if (simulator) {\
+                        const param = this.dataset.param;\
+                        const value = parseFloat(this.value);\
+                        \
+                        switch(param) {\
+                            case 'GRAVITY':\
+                                simulator.set_gravity(value);\
+                                break;\
+                            case 'VISCOSITY':\
+                                simulator.set_viscosity(value);\
+                                break;\
+                            case 'PRESSURE':\
+                                simulator.set_pressure_multiplier(value);\
+                                break;\
+                            case 'VELOCITY_DAMPING':\
+                                simulator.set_velocity_damping(value);\
+                                break;\
+                            case 'PARTICLE_COUNT':\
+                                // Handle particle count change\
+                                break;\
+                        }\
+                    }\
+                });\
+            });
+    </script>
+</body>
+</html>
