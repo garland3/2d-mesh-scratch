@@ -3,389 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rust 2D Finite Element Mesher</title>
+    <title>Rust WASM Simulations</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        .canvas-container {
-            aspect-ratio: 1 / 1;
-            max-height: 80vh;
+        .project-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-        .control-group {
-            border: 1px solid #e2e8f0;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+        .project-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .project-card.mesh {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .project-card.fluid {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Rust 2D Finite Element Mesher</h1>
-            <p class="text-md text-gray-600 mt-2">Ultra-fast mesh generation using Rust + WebAssembly</p>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4">
+                Rust WASM Simulations
+            </h1>
+            <p class="text-xl text-gray-300 max-w-2xl mx-auto">
+                High-performance computational simulations powered by Rust and WebAssembly
+            </p>
+            <div class="mt-6 flex justify-center space-x-4">
+                <span class="tech-badge px-3 py-1 rounded-full text-sm">🦀 Rust</span>
+                <span class="tech-badge px-3 py-1 rounded-full text-sm">🕸️ WebAssembly</span>
+                <span class="tech-badge px-3 py-1 rounded-full text-sm">⚡ High Performance</span>
+            </div>
         </header>
 
-        <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Left Column: Canvas -->
-            <div class="flex-grow lg:w-2/3">
-                <div class="bg-white rounded-lg shadow-lg p-4">
-                    <div class="canvas-container relative">
-                        <canvas id="mainCanvas" class="w-full h-full bg-gray-50 rounded-md border-2 border-gray-200 cursor-crosshair"></canvas>
-                        <div id="canvas-overlay" class="absolute top-0 left-0 w-full h-full pointer-events-none flex items-center justify-center">
-                            <p id="canvas-placeholder" class="text-gray-400 text-lg">Click to start defining a polygon</p>
-                        </div>
+        <!-- Project Grid -->
+        <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            
+            <!-- Mesh Generator -->
+            <div class="project-card mesh rounded-2xl p-8 text-white">
+                <div class="mb-6">
+                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
                     </div>
+                    <h2 class="text-3xl font-bold mb-3">2D Mesh Generator</h2>
+                    <p class="text-lg opacity-90 mb-6">
+                        Advanced finite element mesh generation with Delaunay triangulation, 
+                        refinement algorithms, and real-time quality metrics.
+                    </p>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-3">Features:</h3>
+                    <ul class="space-y-2 text-sm opacity-90">
+                        <li class="flex items-center"><span class="mr-2">✓</span> Interactive polygon definition</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> Adaptive mesh refinement</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> Quality-based smoothing</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> JSON export for FEM analysis</li>
+                    </ul>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <a href="./mesher.html" 
+                       class="flex-1 bg-white bg-opacity-20 hover:bg-opacity-30 transition-all duration-300 rounded-xl px-6 py-3 text-center font-semibold">
+                        Launch Mesher
+                    </a>
+                    <a href="https://github.com/user/repo" 
+                       class="bg-black bg-opacity-30 hover:bg-opacity-50 transition-all duration-300 rounded-xl px-4 py-3">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                        </svg>
+                    </a>
                 </div>
             </div>
 
-            <!-- Right Column: Controls -->
-            <div class="flex-shrink-0 lg:w-1/3">
-                <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
-                    <!-- Geometry -->
-                    <div>
-                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">1. Geometry</h2>
-                        <div class="space-y-3">
-                            <p class="text-sm text-gray-600">Click on the canvas to add vertices. The polygon will close automatically.</p>
-                            <button id="clear-geometry-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-red-300">Clear Geometry</button>
-                        </div>
+            <!-- Fluid Simulator -->
+            <div class="project-card fluid rounded-2xl p-8 text-white">
+                <div class="mb-6">
+                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.19 0 2.34-.21 3.41-.6.3-.11.49-.4.49-.72 0-.43-.35-.78-.78-.78-.17 0-.33.06-.46.14-.89.32-1.85.49-2.85.49-4.14 0-7.5-3.36-7.5-7.5S7.86 4.5 12 4.5s7.5 3.36 7.5 7.5c0 1.31-.35 2.54-.95 3.61-.23.4-.43.82-.58 1.25-.45 1.29-.4 2.72.15 3.99.32.75.32 1.6 0 2.35-.14.33-.43.55-.78.55s-.64-.22-.78-.55c-.32-.75-.32-1.6 0-2.35.55-1.27.6-2.7.15-3.99-.15-.43-.35-.85-.58-1.25C15.35 14.54 15 13.31 15 12c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3c-.55 0-1 .45-1 1s.45 1 1 1c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5z"/>
+                        </svg>
                     </div>
-
-                    <!-- Meshing -->
-                    <div>
-                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">2. Meshing</h2>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <label for="mesh-density" class="text-sm font-medium text-gray-700">Mesh Density:</label>
-                                <select id="mesh-density" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
-                                    <option value="50">Coarse</option>
-                                    <option value="35" selected>Medium</option>
-                                    <option value="25">Fine</option>
-                                    <option value="15">Very Fine</option>
-                                </select>
-                            </div>
-                            <button id="generate-mesh-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-blue-300">Generate Mesh (Rust)</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Post-Processing -->
-                    <div>
-                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">3. Post-Processing</h2>
-                        <div class="space-y-4">
-                             <div class="control-group">
-                                <label class="text-sm font-medium text-gray-700">Metric:</label>
-                                <div class="flex items-center space-x-4 mt-2">
-                                    <label class="flex items-center"><input type="radio" name="refine-metric" value="angle" checked class="form-radio h-4 w-4 text-indigo-600"> <span class="ml-2">Min Angle</span></label>
-                                    <label class="flex items-center"><input type="radio" name="refine-metric" value="aspect" class="form-radio h-4 w-4 text-indigo-600"> <span class="ml-2">Aspect Ratio</span></label>
-                                </div>
-                            </div>
-                            <div id="angle-control" class="flex items-center justify-between">
-                                <label for="min-angle" class="text-sm font-medium text-gray-700">Min Angle (°):</label>
-                                <input type="number" id="min-angle" value="25" min="1" max="59" class="w-24 text-center rounded-md border-gray-300 shadow-sm">
-                            </div>
-                            <div id="aspect-control" class="hidden flex items-center justify-between">
-                                <label for="max-aspect" class="text-sm font-medium text-gray-700">Max Aspect Ratio:</label>
-                                <input type="number" id="max-aspect" value="1.5" step="0.1" min="1.1" class="w-24 text-center rounded-md border-gray-300 shadow-sm">
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button id="refine-mesh-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-green-300">Refine</button>
-                                <button id="smooth-mesh-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-purple-300">Smooth</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Status -->
-                    <div>
-                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Status</h2>
-                        <div class="space-y-2">
-                            <div id="quality-display" class="text-center text-sm bg-gray-100 p-2 rounded-md h-8"></div>
-                            <div id="performance-display" class="text-center text-xs bg-green-100 p-2 rounded-md h-6 text-green-800"></div>
-                            <p id="status-text" class="text-sm text-center text-gray-600 h-5">Ready. Load WASM...</p>
-                        </div>
-                    </div>
-
-                    <!-- Download -->
-                    <div>
-                        <h2 class="text-xl font-semibold border-b pb-2 mb-4">4. Export</h2>
-                        <button id="download-btn" class="w-full bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:bg-gray-400">Download Mesh (JSON)</button>
-                    </div>
+                    <h2 class="text-3xl font-bold mb-3">SPH Fluid Simulator</h2>
+                    <p class="text-lg opacity-90 mb-6">
+                        Real-time smoothed particle hydrodynamics simulation with multiple emitter types,
+                        interactive environments, and velocity field visualization.
+                    </p>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="font-semibold mb-3">Features:</h3>
+                    <ul class="space-y-2 text-sm opacity-90">
+                        <li class="flex items-center"><span class="mr-2">✓</span> Multiple emitter types (inlet, directional)</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> Interactive walls and obstacles</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> Real-time velocity field visualization</li>
+                        <li class="flex items-center"><span class="mr-2">✓</span> Adjustable physics parameters</li>
+                    </ul>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <a href="./test_fluid_2/dist/index.html" 
+                       class="flex-1 bg-white bg-opacity-20 hover:bg-opacity-30 transition-all duration-300 rounded-xl px-6 py-3 text-center font-semibold">
+                        Launch Simulator
+                    </a>
+                    <a href="https://github.com/user/repo" 
+                       class="bg-black bg-opacity-30 hover:bg-opacity-50 transition-all duration-300 rounded-xl px-4 py-3">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                        </svg>
+                    </a>
                 </div>
             </div>
+
         </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-16 text-gray-400">
+            <p>Built with Rust 🦀 and WebAssembly 🕸️</p>
+            <p class="mt-2">High-performance computational simulations in the browser</p>
+        </footer>
     </div>
-
-    <script type="module">
-        import init, { Mesher } from './pkg/rust_mesher.js';
-
-        // DOM Element References
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d');
-        const canvasPlaceholder = document.getElementById('canvas-placeholder');
-        const clearGeometryBtn = document.getElementById('clear-geometry-btn');
-        const generateMeshBtn = document.getElementById('generate-mesh-btn');
-        const refineMeshBtn = document.getElementById('refine-mesh-btn');
-        const smoothMeshBtn = document.getElementById('smooth-mesh-btn');
-        const downloadBtn = document.getElementById('download-btn');
-        const meshDensitySelect = document.getElementById('mesh-density');
-        const minAngleInput = document.getElementById('min-angle');
-        const maxAspectInput = document.getElementById('max-aspect');
-        const statusText = document.getElementById('status-text');
-        const qualityDisplay = document.getElementById('quality-display');
-        const performanceDisplay = document.getElementById('performance-display');
-        const angleControl = document.getElementById('angle-control');
-        const aspectControl = document.getElementById('aspect-control');
-        const metricRadios = document.querySelectorAll('input[name="refine-metric"]');
-
-        // State Variables
-        let polygon = [];
-        let mesher = null;
-        let isMeshGenerated = false;
-
-        // Initialize WASM
-        async function initWasm() {
-            try {
-                await init();
-                mesher = new Mesher();
-                setStatus('WASM loaded. Ready to mesh!');
-                updateButtonStates();
-            } catch (error) {
-                console.error('Failed to load WASM:', error);
-                setStatus('Failed to load WASM module');
-            }
-        }
-
-        // Utility Functions
-        const getCanvasPos = (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            return { 
-                x: (e.clientX - rect.left) * scaleX, 
-                y: (e.clientY - rect.top) * scaleY 
-            };
-        };
-        
-        const updateButtonStates = () => {
-            const hasPolygon = polygon.length > 2;
-            const hasWasm = mesher !== null;
-            generateMeshBtn.disabled = !hasPolygon || !hasWasm;
-            refineMeshBtn.disabled = !isMeshGenerated || !hasWasm;
-            smoothMeshBtn.disabled = !isMeshGenerated || !hasWasm;
-            downloadBtn.disabled = !isMeshGenerated || !hasWasm;
-            clearGeometryBtn.disabled = polygon.length === 0 && !isMeshGenerated;
-        };
-        
-        const setStatus = (text) => {
-            statusText.textContent = text;
-        };
-
-        const setPerformance = (text) => {
-            performanceDisplay.textContent = text;
-        };
-
-        // Drawing Functions
-        const resizeCanvas = () => {
-            const container = canvas.parentElement;
-            const size = Math.min(container.clientWidth, container.clientHeight);
-            canvas.width = size;
-            canvas.height = size;
-            draw();
-        };
-
-        const draw = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw mesh triangles if they exist
-            if (isMeshGenerated && mesher) {
-                const triangleData = mesher.get_triangles_for_drawing();
-                ctx.strokeStyle = 'rgba(0, 100, 255, 0.5)';
-                ctx.lineWidth = 1;
-                
-                for (let i = 0; i < triangleData.length; i += 6) {
-                    ctx.beginPath();
-                    ctx.moveTo(triangleData[i], triangleData[i + 1]);
-                    ctx.lineTo(triangleData[i + 2], triangleData[i + 3]);
-                    ctx.lineTo(triangleData[i + 4], triangleData[i + 5]);
-                    ctx.closePath();
-                    ctx.stroke();
-                }
-            }
-            
-            // Draw polygon outline
-            if (polygon.length > 1) {
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(polygon[0].x, polygon[0].y);
-                for (let i = 1; i < polygon.length; i++) {
-                    ctx.lineTo(polygon[i].x, polygon[i].y);
-                }
-                ctx.closePath();
-                ctx.stroke();
-            }
-            
-            // Draw polygon vertices
-            ctx.fillStyle = '#dc2626';
-            for (const p of polygon) {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-        };
-
-        const updateQualityDisplay = () => {
-            if (!isMeshGenerated || !mesher) {
-                qualityDisplay.textContent = '';
-                return;
-            }
-            
-            const metric = document.querySelector('input[name="refine-metric"]:checked').value;
-            const avgQuality = mesher.get_average_quality(metric);
-            const label = metric === 'angle' ? 'Avg. Min Angle' : 'Avg. Aspect Ratio';
-            const unit = metric === 'angle' ? '°' : '';
-            
-            qualityDisplay.textContent = `${label}: ${avgQuality.toFixed(2)}${unit}`;
-        };
-
-        // Event Handlers
-        const handleCanvasClick = (e) => {
-            if (isMeshGenerated) {
-                setStatus("Clear geometry to define a new shape.");
-                return;
-            }
-            
-            const pos = getCanvasPos(e);
-            polygon.push({ x: pos.x, y: pos.y });
-            
-            canvasPlaceholder.style.display = 'none';
-            draw();
-            updateButtonStates();
-        };
-
-        const handleClear = () => {
-            polygon = [];
-            isMeshGenerated = false;
-            if (mesher) {
-                mesher.clear();
-            }
-            canvasPlaceholder.style.display = 'flex';
-            setStatus('Ready.');
-            setPerformance('');
-            qualityDisplay.textContent = '';
-            draw();
-            updateButtonStates();
-        };
-
-        const handleGenerateMesh = async () => {
-            if (polygon.length < 3 || !mesher) return;
-            
-            const startTime = performance.now();
-            setStatus('Generating mesh with Rust...');
-            
-            // Convert polygon to flat array
-            const polygonArray = polygon.flatMap(p => [p.x, p.y]);
-            mesher.add_polygon(polygonArray);
-            
-            const density = parseFloat(meshDensitySelect.value);
-            const success = mesher.generate_mesh(density);
-            
-            if (success) {
-                isMeshGenerated = true;
-                const endTime = performance.now();
-                const duration = endTime - startTime;
-                
-                setStatus(`Mesh generated in ${duration.toFixed(1)}ms`);
-                setPerformance(`🚀 Rust: ${mesher.get_triangle_count()} triangles, ${mesher.get_point_count()} points`);
-                
-                draw();
-                updateButtonStates();
-                updateQualityDisplay();
-            } else {
-                setStatus('Failed to generate mesh');
-            }
-        };
-
-        const handleRefineMesh = async () => {
-            if (!isMeshGenerated || !mesher) return;
-            
-            const startTime = performance.now();
-            const metric = document.querySelector('input[name="refine-metric"]:checked').value;
-            const threshold = metric === 'angle' ? 
-                parseFloat(minAngleInput.value) : 
-                parseFloat(maxAspectInput.value);
-            
-            setStatus('Refining mesh...');
-            
-            const iterations = mesher.refine_mesh(metric, threshold, 10);
-            
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            
-            setStatus(`Refined ${iterations} iterations in ${duration.toFixed(1)}ms`);
-            setPerformance(`🚀 Rust: ${mesher.get_triangle_count()} triangles, ${mesher.get_point_count()} points`);
-            
-            draw();
-            updateQualityDisplay();
-        };
-
-        const handleSmoothMesh = async () => {
-            if (!isMeshGenerated || !mesher) return;
-            
-            const startTime = performance.now();
-            setStatus('Smoothing mesh...');
-            
-            const success = mesher.smooth_mesh(5);
-            
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            
-            if (success) {
-                setStatus(`Smoothed in ${duration.toFixed(1)}ms`);
-                setPerformance(`🚀 Rust: ${mesher.get_triangle_count()} triangles, ${mesher.get_point_count()} points`);
-            } else {
-                setStatus('Smoothing failed');
-            }
-            
-            draw();
-            updateQualityDisplay();
-        };
-
-        const handleDownload = () => {
-            if (!isMeshGenerated || !mesher) return;
-            
-            const meshData = mesher.get_mesh_data();
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(meshData);
-            const a = document.createElement('a');
-            a.setAttribute("href", dataStr);
-            a.setAttribute("download", "rust_mesh.json");
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            setStatus("Mesh downloaded.");
-        };
-
-        const handleMetricChange = () => {
-            const metric = document.querySelector('input[name="refine-metric"]:checked').value;
-            angleControl.classList.toggle('hidden', metric !== 'angle');
-            aspectControl.classList.toggle('hidden', metric !== 'aspect');
-            updateQualityDisplay();
-        };
-
-        // Initialization
-        window.addEventListener('resize', resizeCanvas);
-        canvas.addEventListener('click', handleCanvasClick);
-        clearGeometryBtn.addEventListener('click', handleClear);
-        generateMeshBtn.addEventListener('click', handleGenerateMesh);
-        refineMeshBtn.addEventListener('click', handleRefineMesh);
-        smoothMeshBtn.addEventListener('click', handleSmoothMesh);
-        downloadBtn.addEventListener('click', handleDownload);
-        metricRadios.forEach(radio => radio.addEventListener('change', handleMetricChange));
-
-        resizeCanvas();
-        updateButtonStates();
-        initWasm();
-    </script>
 </body>
 </html>

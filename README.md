@@ -1,21 +1,61 @@
-# 2D Geometry & FEA Mesh Generator
+# Rust WASM Simulations
 
 ![Application Screenshot](imgs/Screenshot%202025-07-09%20170933.png)
 
-A powerful mesh generation tool with both WebAssembly web interface and command-line capabilities for generating high-quality 2D finite element meshes.
+High-performance computational simulations powered by Rust and WebAssembly, designed for GitHub Pages deployment.
+
+## 🚀 Projects
+
+### 2D Mesh Generator
+Advanced finite element mesh generation with Delaunay triangulation, refinement algorithms, and real-time quality metrics.
+
+### SPH Fluid Simulator  
+Real-time smoothed particle hydrodynamics simulation with multiple emitter types, interactive environments, and velocity field visualization.
+
+## 🌐 GitHub Pages Deployment
+
+### Quick Setup
+
+1. **Fork this repository**
+2. **Enable GitHub Pages** in repository settings  
+3. **Build fluid simulator** (if needed):
+   ```bash
+   cd test_fluid_2
+   ./make_deployment.sh
+   ```
+4. **Deploy** - GitHub Pages will automatically serve from the root directory
+
+### File Structure for Deployment
+
+```
+/
+├── index.html          # Landing page with project links
+├── mesher.html         # 2D Mesh Generator (ready to deploy)
+├── pkg/               # Mesher WASM files
+└── test_fluid_2/
+    ├── dist/          # Deployment-ready fluid simulator
+    │   ├── index.html # Standalone fluid simulator
+    │   ├── combined.js# All JS modules combined
+    │   └── pkg/       # Fluid simulator WASM files
+    └── make_deployment.sh # Build script
+```
 
 ## Features
 
-- **Dual Interface**: Both web browser (WASM) and command-line tool
+### 2D Mesh Generator
 - **WebAssembly Performance**: Fast mesh generation running directly in the browser
 - **Interactive Web Interface**: Click to add boundary points and visualize meshes in real-time
 - **Command Line Tool**: Scriptable mesh generation for automation and batch processing
-- **Multiple Mesh Algorithms**:
-  - **Delaunay Triangulation**: Fast, robust triangulation for general geometries
-  - **Paving (Quad-dominant)**: Structured grid-based approach for rectangular regions
-  - **Simulated Annealing**: Advanced optimization for high-quality meshes
+- **Multiple Mesh Algorithms**: Delaunay, Paving, Simulated Annealing
 - **Quality Control**: Configurable refinement and smoothing algorithms
-- **Export Capabilities**: JSON output for use in FEA software and analysis tools
+- **Export Capabilities**: JSON output for use in FEA software
+
+### SPH Fluid Simulator
+- **Multiple emitter types**: Regular inlets and directional emitters
+- **Interactive environments**: Draw walls, add outlets
+- **Real-time physics**: SPH particle simulation with adjustable parameters
+- **Velocity field visualization**: See flow patterns in real-time
+- **High performance**: Rust WASM for smooth 60fps simulation
 
 ## Quick Start
 
